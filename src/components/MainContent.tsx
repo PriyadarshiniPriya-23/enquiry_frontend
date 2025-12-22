@@ -104,7 +104,7 @@ export default function MainContent({ children }: { children: React.ReactNode })
     const navItems = [
         { icon: <DashboardIcon />, label: 'Dashboard', path: '/dashboard' },
         { icon: <PackageIcon />, label: 'Package and Subjects', path: '/package-subject' },
-        { icon: <ContactIcon />, label: 'Contacts', path: '/contacts' },
+        { icon: <ContactIcon />, label: 'Enquiries', path: '/enquiries' },
         { icon: <UserRolesIcon />, label: 'User and Roles', path: '/user-roles' }
     ];
 
@@ -125,6 +125,22 @@ export default function MainContent({ children }: { children: React.ReactNode })
         const activeItem = navItems.find(item => item.path === location.pathname);
         return activeItem ? activeItem.label : 'Dashboard';
     };
+    const getActiveDescription = () => {
+        const activeItem = navItems.find(item => item.path === location.pathname);
+        if (activeItem?.label == 'Dashboard') {
+            return 'Welcome to Enquiry Management System';
+        }
+        if (activeItem?.label == 'Package and Subjects') {
+            return 'Manage your packages and subjects here';
+        }
+        if (activeItem?.label == 'Enquiries') {
+            return 'List of all student enquiries and their details';
+        }
+        if (activeItem?.label == 'User and Roles') {
+            return 'Manage your users and roles here';
+        }
+        return 'Enquiry Forms Portal';
+    }
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
@@ -244,7 +260,7 @@ export default function MainContent({ children }: { children: React.ReactNode })
                     <div className="flex items-center justify-between">
                         <div className="pl-12 lg:pl-0">
                             <h1 className="text-xl lg:text-2xl font-bold text-slate-800">{getActiveLabel()}</h1>
-                            <p className="text-sm text-slate-500 mt-0.5">Welcome back! Here's what's happening today.</p>
+                            <p className="text-sm text-slate-500 mt-0.5">{getActiveDescription()}</p>
                         </div>
                         <div className="flex items-center gap-3">
                             {/* Notification Bell */}

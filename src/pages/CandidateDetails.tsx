@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router';
 import { apiRequest } from '../utils/api';
-import type { Enquiry } from '../types';
+import type { Enquiry, BillingDetails } from '../types';
 import CandidateInfo from '../components/candidate/CandidateInfo';
 import DealStageCard from '../components/candidate/DealStage';
 import ActivityTabs from '../components/candidate/ActivityTabs';
@@ -126,23 +126,77 @@ export default function CandidateDetails() {
             <div className="flex flex-col items-center justify-center h-screen bg-slate-50">
                 <div className="text-rose-600 font-medium mb-4">{error || 'Candidate not found'}</div>
                 <button
-                    onClick={() => navigate('/contacts')}
+                    onClick={() => navigate('/enquiries')}
                     className="px-4 py-2 bg-white border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50"
                 >
-                    Back to Contacts
+                    Back to Enquiries
                 </button>
             </div>
         );
     }
 
     // Billing State (lifted up)
-    interface BillingDetails {
-        total: number;
-        paid: number;
-        discount: number;
-    }
     const [billingDetails, setBillingDetails] = useState<BillingDetails | null>(null);
     const role = localStorage.getItem('userRole');
+
+    // Fetch billing details
+    useEffect(() => {
+        if (!id) return;
+        const fetchBilling = async () => {
+            try {
+                // The API can return the billing object directly
+                const response = await apiRequest<any>(`/api/billings/enquiry/${id}`, { method: 'GET' });
+
+                // Handle flat response object as per updated requirement
+                if (response && (response.packageCost !== undefined || response.id)) {
+                    setBillingDetails({
+                        total: Number(response.packageCost || 0),
+                        paid: Number(response.amountPaid || 0),
+                        discount: Number(response.discount || 0),
+                    });
+                }
+                // Fallback for nested 'billing' property if API behavior varies
+                else if (response && response.billing) {
+                    setBillingDetails({
+                        total: Number(response.billing.packageCost),
+                        paid: Number(response.billing.amountPaid),
+                        discount: Number(response.billing.discount),
+                    });
+                }
+            } catch (err) {
+                // It's okay if no billing exists yet
+                console.log('No existing billing or failed to fetch', err);
+            }
+        };
+        fetchBilling();
+    }, [id]);
+
+    const handleSaveBilling = async () => {
+        if (!billingDetails || !enquiry) return;
+        try {
+            const response = await apiRequest<{ message: string, billing: any }>('/api/billings', {
+                method: 'POST',
+                body: {
+                    enquiryId: enquiry.id,
+                    packageCost: billingDetails.total,
+                    amountPaid: billingDetails.paid,
+                    discount: billingDetails.discount
+                }
+            });
+
+            if (response && response.billing) {
+                setBillingDetails({
+                    total: Number(response.billing.packageCost),
+                    paid: Number(response.billing.amountPaid),
+                    discount: Number(response.billing.discount),
+                });
+                alert('Billing information updated successfully');
+            }
+        } catch (err: any) {
+            console.error('Failed to save billing:', err);
+            alert(err.message || 'Failed to update billing information');
+        }
+    };
 
     // ... (existing effects)
 
@@ -152,7 +206,7 @@ export default function CandidateDetails() {
             <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-4">
                     <button
-                        onClick={() => navigate('/contacts')}
+                        onClick={() => navigate('/enquiries')}
                         className="p-2 hover:bg-white rounded-full text-slate-400 hover:text-slate-600 transition-colors"
                     >
                         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -205,8 +259,10 @@ export default function CandidateDetails() {
                     />
                     <div className="flex-1 min-h-0">
                         <ActivityTabs
+                            enquiryId={enquiry.id}
                             billingDetails={billingDetails}
                             onUpdateBilling={setBillingDetails}
+                            onSaveBilling={handleSaveBilling}
                         />
                     </div>
                 </div>

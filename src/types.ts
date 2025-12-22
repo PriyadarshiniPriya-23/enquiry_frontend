@@ -32,3 +32,9 @@ export interface Enquiry {
     createdAt: string;
     updatedAt: string;
 }
+
+export interface BillingDetails {
+    total: number;
+    paid: number;
+    discount: number;
+}

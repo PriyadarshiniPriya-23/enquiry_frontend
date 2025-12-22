@@ -1,4 +1,7 @@
 import { useState, useEffect } from 'react';
+import { apiRequest } from '../../utils/api';
+
+import type { BillingDetails } from '../../types';
 
 interface Log {
     id: number;
@@ -8,19 +11,14 @@ interface Log {
     timestamp: string;
 }
 
-// Shared interface (should be in types.ts but defining here for now to match parent)
-interface BillingDetails {
-    total: number;
-    paid: number;
-    discount: number;
-}
-
 interface ActivityTabsProps {
+    enquiryId: number;
     billingDetails: BillingDetails | null;
     onUpdateBilling: (details: BillingDetails) => void;
+    onSaveBilling: () => Promise<void>;
 }
 
-export default function ActivityTabs({ billingDetails, onUpdateBilling }: ActivityTabsProps) {
+export default function ActivityTabs({ enquiryId, billingDetails, onUpdateBilling, onSaveBilling }: ActivityTabsProps) {
     const [activeTab, setActiveTab] = useState<'notes' | 'billing'>('notes');
     const [role, setRole] = useState<string | null>(null);
 
@@ -32,27 +30,116 @@ export default function ActivityTabs({ billingDetails, onUpdateBilling }: Activi
 
     const [newLog, setNewLog] = useState({ title: '', description: '' });
 
+    const [editingLogId, setEditingLogId] = useState<number | null>(null);
+
     useEffect(() => {
         const storedRole = localStorage.getItem('userRole');
         setRole(storedRole);
 
-        // Mock initial logs if needed, or start empty. Let's start empty as per "Log a Call" prompt imply creating new ones.
-    }, []);
+        // Fetch logs for the current enquiry
+        if (enquiryId) {
+            const fetchLogs = async () => {
+                try {
+                    const response = await apiRequest<any[]>(`/api/logs/${enquiryId}`, {
+                        method: 'GET'
+                    });
 
-    const handleSaveLog = () => {
+                    if (Array.isArray(response)) {
+                        const fetchedLogs: Log[] = response
+                            .map(item => ({
+                                id: item.id,
+                                title: item.title,
+                                description: item.description,
+                                author: item.User?.role || 'User',
+                                timestamp: new Date(item.createdAt).toLocaleString()
+                            }))
+                            .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()); // Sort newest first
+
+                        setLogs(fetchedLogs);
+                    }
+                } catch (err) {
+                    console.error('Failed to fetch logs:', err);
+                }
+            };
+            fetchLogs();
+        }
+    }, [enquiryId]);
+
+    const handleSaveLog = async () => {
         if (!newLog.title || !newLog.description) return;
 
-        const logEntry: Log = {
-            id: Date.now(),
-            title: newLog.title,
-            description: newLog.description,
-            author: role || 'User', // Show who posted it
-            timestamp: new Date().toLocaleString()
-        };
+        try {
+            if (editingLogId) {
+                // Edit existing log
+                // PUT /api/logs/:id
+                await apiRequest<{ message: string, log: any }>(`/api/logs/${editingLogId}`, {
+                    method: 'PUT',
+                    body: {
+                        title: newLog.title,
+                        description: newLog.description
+                    }
+                });
 
-        setLogs([logEntry, ...logs]);
-        setNewLog({ title: '', description: '' });
-        setIsModalOpen(false);
+                // Update local state
+                setLogs(prev => prev.map(log =>
+                    log.id === editingLogId
+                        ? {
+                            ...log,
+                            title: newLog.title,
+                            description: newLog.description,
+                            // timestamp: new Date().toLocaleString() // keeping original timestamp or using updated if backend provided
+                        }
+                        : log
+                ));
+                alert('Log updated successfully!');
+            } else {
+                // Create new log
+                // Expecting an array of logs (or the created log wrapped in array)
+                const response = await apiRequest<any[]>('/api/logs', {
+                    method: 'POST',
+                    body: {
+                        enquiryId,
+                        title: newLog.title,
+                        description: newLog.description
+                    }
+                });
+
+                if (Array.isArray(response) && response.length > 0) {
+                    // Map the backend response to frontend Log interface
+                    const createdLogs: Log[] = response.map(item => ({
+                        id: item.id,
+                        title: item.title,
+                        description: item.description,
+                        // Use nested User role if available, fallback to current session role
+                        author: item.User?.role || role || 'User',
+                        timestamp: new Date(item.createdAt).toLocaleString()
+                    }));
+
+                    // Prepend new logs
+                    setLogs(prev => [...createdLogs, ...prev]);
+                    alert('Log added successfully!');
+                }
+            }
+
+            // Cleanup
+            setNewLog({ title: '', description: '' });
+            setEditingLogId(null);
+            setIsModalOpen(false);
+
+        } catch (err: any) {
+            console.error('Failed to save log:', err);
+            if (err.message) {
+                alert(`Error: ${err.message}`);
+            } else {
+                alert('Failed to save log. Please try again.');
+            }
+        }
+    };
+
+    const handleEditClick = (log: Log) => {
+        setNewLog({ title: log.title, description: log.description });
+        setEditingLogId(log.id);
+        setIsModalOpen(true);
     };
 
     const isBillingAuthorized = role === 'ADMIN' || role === 'ACCOUNTS';
@@ -87,7 +174,11 @@ export default function ActivityTabs({ billingDetails, onUpdateBilling }: Activi
                     <div className="space-y-6">
                         <div className="flex justify-end">
                             <button
-                                onClick={() => setIsModalOpen(true)}
+                                onClick={() => {
+                                    setEditingLogId(null);
+                                    setNewLog({ title: '', description: '' });
+                                    setIsModalOpen(true);
+                                }}
                                 className="px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 text-sm font-medium rounded-lg transition-colors flex items-center gap-2"
                             >
                                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -107,10 +198,21 @@ export default function ActivityTabs({ billingDetails, onUpdateBilling }: Activi
                         ) : (
                             <div className="space-y-4">
                                 {logs.map(log => (
-                                    <div key={log.id} className="bg-slate-50 border border-slate-200 rounded-lg p-4 hover:border-indigo-300 transition-colors">
+                                    <div key={log.id} className="bg-slate-50 border border-slate-200 rounded-lg p-4 hover:border-indigo-300 transition-colors group">
                                         <div className="flex justify-between items-start mb-2">
                                             <h4 className="font-semibold text-slate-800">{log.title}</h4>
-                                            <span className="text-xs text-slate-500">{log.timestamp}</span>
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-xs text-slate-500">{log.timestamp}</span>
+                                                <button
+                                                    onClick={() => handleEditClick(log)}
+                                                    className="opacity-0 group-hover:opacity-100 p-1 hover:bg-slate-200 rounded text-slate-400 hover:text-indigo-600 transition-all"
+                                                    title="Edit Log"
+                                                >
+                                                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                                    </svg>
+                                                </button>
+                                            </div>
                                         </div>
                                         <p className="text-sm text-slate-600 whitespace-pre-wrap mb-3">{log.description}</p>
                                         <div className="flex items-center gap-2 text-xs text-slate-500 border-t border-slate-200 pt-2">
@@ -125,7 +227,7 @@ export default function ActivityTabs({ billingDetails, onUpdateBilling }: Activi
                         )}
                     </div>
                 ) : (
-                    <div className="relative h-full flex flex-col">
+                    <div className="relative min-h-full flex flex-col">
                         {/* Authorized Content (blurred if not) */}
                         <div className={`flex-1 flex flex-col ${!isBillingAuthorized ? 'blur-sm select-none pointer-events-none' : ''}`}>
 
@@ -220,8 +322,11 @@ export default function ActivityTabs({ billingDetails, onUpdateBilling }: Activi
                                     </div>
 
                                     {/* Action */}
-                                    <div className="flex justify-end pt-4">
-                                        <button className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg shadow-sm transition-colors">
+                                    <div className="flex justify-end py-4">
+                                        <button
+                                            onClick={() => onSaveBilling()}
+                                            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg shadow-sm transition-colors mb-4"
+                                        >
                                             Update Billing
                                         </button>
                                     </div>
@@ -250,7 +355,7 @@ export default function ActivityTabs({ billingDetails, onUpdateBilling }: Activi
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
                     <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden">
                         <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
-                            <h3 className="font-semibold text-slate-800">Log a Call / Add Note</h3>
+                            <h3 className="font-semibold text-slate-800">{editingLogId ? 'Edit Log' : 'Log a Call / Add Note'}</h3>
                             <button
                                 onClick={() => setIsModalOpen(false)}
                                 className="text-slate-400 hover:text-slate-600 transition-colors"
@@ -294,7 +399,7 @@ export default function ActivityTabs({ billingDetails, onUpdateBilling }: Activi
                                 disabled={!newLog.title || !newLog.description}
                                 className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg shadow-sm transition-colors"
                             >
-                                Save Log
+                                {editingLogId ? 'Update Log' : 'Save Log'}
                             </button>
                         </div>
                     </div>

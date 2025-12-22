@@ -76,7 +76,7 @@ export default function Contact() {
 
     return (
         <div className="space-y-6">
-            <div className="flex items-center justify-between">
+            {/* <div className="flex items-center justify-between">
                 <div>
                     <h1 className="text-2xl font-bold text-slate-900">Enquiries</h1>
                     <p className="text-slate-500 text-sm mt-1">List of all student enquiries and their details.</p>
@@ -84,7 +84,7 @@ export default function Contact() {
                 <div className="bg-indigo-50 text-indigo-700 px-3 py-1 rounded-full text-xs font-medium">
                     Total: {enquiries.length}
                 </div>
-            </div>
+            </div> */}
 
             <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
                 <div className="overflow-x-auto">

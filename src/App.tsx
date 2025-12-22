@@ -54,7 +54,7 @@ const router = createBrowserRouter([
     </ProtectedRoute>,
   },
   {
-    path: "/contacts",
+    path: "/enquiries",
     element: <ProtectedRoute isAuthenticated={isAuthenticated}>
       <MainContent>
         <Contact />
