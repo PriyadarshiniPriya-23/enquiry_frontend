@@ -10,7 +10,7 @@ const DashboardIcon = () => (
 );
 
 const PackageIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="w-5 h-5"><path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z" /><path d="M12 22V12" /><polyline points="3.29 7 12 12 20.71 7" /><path d="m7.5 4.27 9 5.15" /></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5"><path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z" /><path d="M12 22V12" /><polyline points="3.29 7 12 12 20.71 7" /><path d="m7.5 4.27 9 5.15" /></svg>
 );
 
 // const ReportsIcon = () => (
@@ -61,7 +61,12 @@ const ChevronRightIcon = () => (
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
     </svg>
 );
-
+const ContactIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5"><path d="M16 2v2" /><path d="M7 22v-2a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v2" /><path d="M8 2v2" /><circle cx="12" cy="11" r="3" /><rect x="3" y="4" width="18" height="18" rx="2" /></svg>
+);
+const UserRolesIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><path d="M16 3.128a4 4 0 0 1 0 7.744" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /><circle cx="9" cy="7" r="4" /></svg>
+)
 interface NavItemProps {
     icon: React.ReactNode;
     label: string;
@@ -98,12 +103,16 @@ export default function MainContent({ children }: { children: React.ReactNode })
 
     const navItems = [
         { icon: <DashboardIcon />, label: 'Dashboard', path: '/dashboard' },
-        { icon: <PackageIcon />, label: 'Package and Subjects', path: '/package-subject' }
+        { icon: <PackageIcon />, label: 'Package and Subjects', path: '/package-subject' },
+        { icon: <ContactIcon />, label: 'Contacts', path: '/contacts' },
+        { icon: <UserRolesIcon />, label: 'User and Roles', path: '/user-roles' }
     ];
 
     const handleLogout = () => {
-        // Handle logout logic here
-        console.log('Logging out...');
+        // Clear all localStorage
+        localStorage.clear();
+        // Redirect to login page
+        navigate('/login');
     };
 
     const handleNavigation = (path: string) => {
@@ -163,6 +172,23 @@ export default function MainContent({ children }: { children: React.ReactNode })
                         className="lg:hidden p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition-colors"
                     >
                         <CloseIcon />
+                    </button>
+                </div>
+
+                {/* Create Enquiry Button */}
+                <div className="p-3 border-b border-slate-200/60">
+                    <button
+                        onClick={() => handleNavigation('/create-enquiry')}
+                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-700 text-white hover:from-indigo-700 hover:to-indigo-800 shadow-lg hover:shadow-xl transition-all duration-200 group
+                            ${isCollapsed ? 'justify-center' : ''}`}
+                        title={isCollapsed ? 'Create Enquiry' : undefined}
+                    >
+                        <span className="flex-shrink-0 transition-transform duration-200 group-hover:scale-110">
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                            </svg>
+                        </span>
+                        {!isCollapsed && <span className="font-semibold text-sm whitespace-nowrap">Create Enquiry</span>}
                     </button>
                 </div>
 

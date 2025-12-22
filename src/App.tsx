@@ -4,6 +4,10 @@ import Dashboard from "./pages/Dashboard";
 import PackageSubject from "./pages/PackageSubject";
 import MainContent from "./components/MainContent";
 import LoginPage from "./pages/LoginPage";
+import Contact from "./pages/Contact";
+import UserRoles from "./pages/UserRoles";
+import Enquiry from "./pages/Enquiry";
+import CandidateDetails from "./pages/CandidateDetails";
 
 const isAuthenticated = true; // or false
 
@@ -34,10 +38,42 @@ const router = createBrowserRouter([
     </ProtectedRoute>,
   },
   {
+    path: "/create-enquiry",
+    element: <ProtectedRoute isAuthenticated={isAuthenticated}>
+      <MainContent>
+        <Enquiry />
+      </MainContent>
+    </ProtectedRoute>,
+  },
+  {
     path: "/package-subject",
     element: <ProtectedRoute isAuthenticated={isAuthenticated}>
       <MainContent>
         <PackageSubject />
+      </MainContent>
+    </ProtectedRoute>,
+  },
+  {
+    path: "/contacts",
+    element: <ProtectedRoute isAuthenticated={isAuthenticated}>
+      <MainContent>
+        <Contact />
+      </MainContent>
+    </ProtectedRoute>,
+  },
+  {
+    path: "/contact-details/:id",
+    element: <ProtectedRoute isAuthenticated={isAuthenticated}>
+      <MainContent>
+        <CandidateDetails />
+      </MainContent>
+    </ProtectedRoute>,
+  },
+  {
+    path: "/user-roles",
+    element: <ProtectedRoute isAuthenticated={isAuthenticated}>
+      <MainContent>
+        <UserRoles />
       </MainContent>
     </ProtectedRoute>,
   },

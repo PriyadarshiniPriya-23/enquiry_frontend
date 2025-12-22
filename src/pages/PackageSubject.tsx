@@ -1,17 +1,22 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { apiRequest } from '../utils/api';
 
 // Types
 interface Subject {
-    id: string;
+    id: number;
     name: string;
     code: string;
+    createdAt?: string;
+    updatedAt?: string;
 }
 
 interface Package {
-    id: string;
+    id: number;
     name: string;
     code: string;
-    subjectIds: string[];
+    createdAt?: string;
+    updatedAt?: string;
+    Subjects: Subject[];
 }
 
 // Icons
@@ -47,13 +52,10 @@ const SearchIcon = () => (
 
 export default function PackageSubject() {
     const [activeTab, setActiveTab] = useState<'subjects' | 'packages'>('subjects');
-    const [subjects, setSubjects] = useState<Subject[]>([
-        { id: '1', name: 'Mathematics', code: 'MATH101' },
-        { id: '2', name: 'Physics', code: 'PHY101' },
-    ]);
-    const [packages, setPackages] = useState<Package[]>([
-        { id: '1', name: 'Science Package', code: 'SCI001', subjectIds: ['1', '2'] },
-    ]);
+    const [subjects, setSubjects] = useState<Subject[]>([]);
+    const [packages, setPackages] = useState<Package[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     // Modal states
     const [isSubjectModalOpen, setIsSubjectModalOpen] = useState(false);
@@ -63,8 +65,48 @@ export default function PackageSubject() {
 
     // Form states
     const [subjectForm, setSubjectForm] = useState({ name: '', code: '' });
-    const [packageForm, setPackageForm] = useState({ name: '', code: '', subjectIds: [] as string[] });
+    const [packageForm, setPackageForm] = useState({ name: '', code: '', subjectIds: [] as number[] });
     const [subjectSearchQuery, setSubjectSearchQuery] = useState('');
+
+    // Fetch data on mount and tab change
+    useEffect(() => {
+        fetchSubjects();
+        fetchPackages();
+    }, []);
+
+    // Fetch Subjects
+    const fetchSubjects = async () => {
+        setLoading(true);
+        setError(null);
+        try {
+            const data = await apiRequest<Subject[]>('/api/subjects', {
+                method: 'GET',
+            });
+            setSubjects(data);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to fetch subjects');
+            console.error('Error fetching subjects:', err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Fetch Packages
+    const fetchPackages = async () => {
+        setLoading(true);
+        setError(null);
+        try {
+            const data = await apiRequest<Package[]>('/api/packages', {
+                method: 'GET',
+            });
+            setPackages(data);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to fetch packages');
+            console.error('Error fetching packages:', err);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     // Subject CRUD
     const openSubjectModal = (subject?: Subject) => {
@@ -75,25 +117,63 @@ export default function PackageSubject() {
             setEditingSubject(null);
             setSubjectForm({ name: '', code: '' });
         }
+        setError(null);
         setIsSubjectModalOpen(true);
     };
 
-    const saveSubject = () => {
-        if (!subjectForm.name || !subjectForm.code) return;
-
-        if (editingSubject) {
-            setSubjects(subjects.map(s => s.id === editingSubject.id ? { ...s, ...subjectForm } : s));
-        } else {
-            setSubjects([...subjects, { id: Date.now().toString(), ...subjectForm }]);
+    const saveSubject = async () => {
+        if (!subjectForm.name || !subjectForm.code) {
+            setError('name and code are required');
+            return;
         }
-        setIsSubjectModalOpen(false);
-        setSubjectForm({ name: '', code: '' });
+
+        setLoading(true);
+        setError(null);
+
+        try {
+            if (editingSubject) {
+                // Update subject (if you have an update endpoint)
+                await apiRequest(`/api/subjects/${editingSubject.id}`, {
+                    method: 'PUT',
+                    body: { name: subjectForm.name, code: subjectForm.code },
+                });
+            } else {
+                // Create subject
+                await apiRequest('/api/subjects', {
+                    method: 'POST',
+                    body: { name: subjectForm.name, code: subjectForm.code },
+                });
+            }
+            await fetchSubjects();
+            setIsSubjectModalOpen(false);
+            setSubjectForm({ name: '', code: '' });
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'An error occurred');
+            console.error('Error saving subject:', err);
+        } finally {
+            setLoading(false);
+        }
     };
 
-    const deleteSubject = (id: string) => {
-        if (confirm('Are you sure you want to delete this subject?')) {
-            setSubjects(subjects.filter(s => s.id !== id));
-            setPackages(packages.map(p => ({ ...p, subjectIds: p.subjectIds.filter(sid => sid !== id) })));
+    const deleteSubject = async (id: number) => {
+        if (!confirm('Are you sure you want to delete this subject?')) {
+            return;
+        }
+
+        setLoading(true);
+        setError(null);
+
+        try {
+            await apiRequest(`/api/subjects/${id}`, {
+                method: 'DELETE',
+            });
+            await fetchSubjects();
+            await fetchPackages(); // Refresh packages as they might be affected
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to delete subject');
+            console.error('Error deleting subject:', err);
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -101,34 +181,82 @@ export default function PackageSubject() {
     const openPackageModal = (pkg?: Package) => {
         if (pkg) {
             setEditingPackage(pkg);
-            setPackageForm({ name: pkg.name, code: pkg.code, subjectIds: pkg.subjectIds });
+            // Convert Subjects array to subjectIds array
+            const subjectIds = pkg.Subjects.map(s => s.id);
+            setPackageForm({ name: pkg.name, code: pkg.code, subjectIds });
         } else {
             setEditingPackage(null);
             setPackageForm({ name: '', code: '', subjectIds: [] });
         }
         setSubjectSearchQuery(''); // Reset search when opening modal
+        setError(null);
         setIsPackageModalOpen(true);
     };
 
-    const savePackage = () => {
-        if (!packageForm.name || !packageForm.code) return;
-
-        if (editingPackage) {
-            setPackages(packages.map(p => p.id === editingPackage.id ? { ...p, ...packageForm } : p));
-        } else {
-            setPackages([...packages, { id: Date.now().toString(), ...packageForm }]);
+    const savePackage = async () => {
+        if (!packageForm.name || !packageForm.code) {
+            setError('name, code and subjectIds (array) are required');
+            return;
         }
-        setIsPackageModalOpen(false);
-        setPackageForm({ name: '', code: '', subjectIds: [] });
+
+        setLoading(true);
+        setError(null);
+
+        try {
+            if (editingPackage) {
+                // Update package (if you have an update endpoint)
+                await apiRequest(`/api/packages/${editingPackage.id}`, {
+                    method: 'PUT',
+                    body: {
+                        name: packageForm.name,
+                        code: packageForm.code,
+                        subjectIds: packageForm.subjectIds,
+                    },
+                });
+            } else {
+                // Create package
+                await apiRequest('/api/packages', {
+                    method: 'POST',
+                    body: {
+                        name: packageForm.name,
+                        code: packageForm.code,
+                        subjectIds: packageForm.subjectIds,
+                    },
+                });
+            }
+            await fetchPackages();
+            setIsPackageModalOpen(false);
+            setPackageForm({ name: '', code: '', subjectIds: [] });
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'An error occurred');
+            console.error('Error saving package:', err);
+        } finally {
+            setLoading(false);
+        }
     };
 
-    const deletePackage = (id: string) => {
-        if (confirm('Are you sure you want to delete this package?')) {
-            setPackages(packages.filter(p => p.id !== id));
+    const deletePackage = async (id: number) => {
+        if (!confirm('Are you sure you want to delete this package?')) {
+            return;
+        }
+
+        setLoading(true);
+        setError(null);
+
+        try {
+            await apiRequest(`/api/packages/${id}`, {
+                method: 'DELETE',
+            });
+            await fetchPackages();
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to delete package');
+            console.error('Error deleting package:', err);
+        } finally {
+            setLoading(false);
         }
     };
 
-    const toggleSubjectSelection = (subjectId: string) => {
+    const toggleSubjectSelection = (subjectId: number) => {
         setPackageForm(prev => ({
             ...prev,
             subjectIds: prev.subjectIds.includes(subjectId)
@@ -137,9 +265,7 @@ export default function PackageSubject() {
         }));
     };
 
-    const getSubjectNames = (subjectIds: string[]) => {
-        return subjectIds.map(id => subjects.find(s => s.id === id)?.name).filter(Boolean).join(', ');
-    };
+
 
     // Filter subjects based on search query
     const filteredSubjects = subjects.filter(subject =>
@@ -204,6 +330,13 @@ export default function PackageSubject() {
                 </button>
             </div>
 
+            {/* Error Message */}
+            {error && (
+                <div className="bg-rose-50 border border-rose-200 text-rose-700 px-4 py-3 rounded-lg text-sm">
+                    {error}
+                </div>
+            )}
+
             {/* Tables */}
             <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
                 {activeTab === 'subjects' ? (
@@ -217,7 +350,13 @@ export default function PackageSubject() {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-200">
-                                {subjects.length === 0 ? (
+                                {loading && subjects.length === 0 ? (
+                                    <tr>
+                                        <td colSpan={3} className="px-4 py-8 text-center text-slate-500 text-sm">
+                                            Loading subjects...
+                                        </td>
+                                    </tr>
+                                ) : subjects.length === 0 ? (
                                     <tr>
                                         <td colSpan={3} className="px-4 py-8 text-center text-slate-500 text-sm">
                                             No subjects found. Click "Add Subject" to create one.
@@ -260,7 +399,13 @@ export default function PackageSubject() {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-200">
-                                {packages.length === 0 ? (
+                                {loading && packages.length === 0 ? (
+                                    <tr>
+                                        <td colSpan={4} className="px-4 py-8 text-center text-slate-500 text-sm">
+                                            Loading packages...
+                                        </td>
+                                    </tr>
+                                ) : packages.length === 0 ? (
                                     <tr>
                                         <td colSpan={4} className="px-4 py-8 text-center text-slate-500 text-sm">
                                             No packages found. Click "Add Package" to create one.
@@ -272,7 +417,7 @@ export default function PackageSubject() {
                                             <td className="px-4 py-3 text-sm text-slate-800">{pkg.name}</td>
                                             <td className="px-4 py-3 text-sm text-slate-600">{pkg.code}</td>
                                             <td className="px-4 py-3 text-sm text-slate-600 max-w-xs truncate">
-                                                {getSubjectNames(pkg.subjectIds) || 'No subjects'}
+                                                {pkg.Subjects?.map(s => s.name).join(', ') || 'No subjects'}
                                             </td>
                                             <td className="px-4 py-3 text-right">
                                                 <button
@@ -313,6 +458,13 @@ export default function PackageSubject() {
                             </button>
                         </div>
                         <div className="px-6 py-4 space-y-4">
+                            {/* Error Message in Modal */}
+                            {error && (
+                                <div className="bg-rose-50 border border-rose-200 text-rose-700 px-3 py-2 rounded-lg text-sm">
+                                    {error}
+                                </div>
+                            )}
+
                             <div>
                                 <label className="block text-sm font-medium text-slate-700 mb-1">
                                     Subject Name
@@ -347,9 +499,10 @@ export default function PackageSubject() {
                             </button>
                             <button
                                 onClick={saveSubject}
-                                className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors"
+                                disabled={loading}
+                                className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                                {editingSubject ? 'Update' : 'Create'}
+                                {loading ? 'Saving...' : editingSubject ? 'Update' : 'Create'}
                             </button>
                         </div>
                     </div>
@@ -372,6 +525,13 @@ export default function PackageSubject() {
                             </button>
                         </div>
                         <div className="px-6 py-4 space-y-4">
+                            {/* Error Message in Modal */}
+                            {error && (
+                                <div className="bg-rose-50 border border-rose-200 text-rose-700 px-3 py-2 rounded-lg text-sm">
+                                    {error}
+                                </div>
+                            )}
+
                             <div>
                                 <label className="block text-sm font-medium text-slate-700 mb-1">
                                     Package Name
@@ -466,9 +626,10 @@ export default function PackageSubject() {
                             </button>
                             <button
                                 onClick={savePackage}
-                                className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors"
+                                disabled={loading}
+                                className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                                {editingPackage ? 'Update' : 'Create'}
+                                {loading ? 'Saving...' : editingPackage ? 'Update' : 'Create'}
                             </button>
                         </div>
                     </div>
