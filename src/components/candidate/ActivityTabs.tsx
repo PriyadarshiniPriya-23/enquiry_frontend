@@ -32,35 +32,34 @@ export default function ActivityTabs({ enquiryId, billingDetails, onUpdateBillin
 
     const [editingLogId, setEditingLogId] = useState<number | null>(null);
 
+
+    // Fetch logs helper
+    const fetchLogs = async () => {
+        try {
+            const response = await apiRequest<any[]>(`/api/logs/${enquiryId}`, {
+                method: 'GET'
+            });
+            if (Array.isArray(response)) {
+                const fetchedLogs: Log[] = response
+                    .map(item => ({
+                        id: item.id,
+                        title: item.title,
+                        description: item.description,
+                        author: item.User?.role || 'User',
+                        timestamp: new Date(item.createdAt).toLocaleString()
+                    }))
+                    .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()); // Sort newest first
+                setLogs(fetchedLogs);
+            }
+        } catch (err) {
+            console.error('Failed to fetch logs:', err);
+        }
+    };
+
     useEffect(() => {
         const storedRole = localStorage.getItem('userRole');
         setRole(storedRole);
-
-        // Fetch logs for the current enquiry
         if (enquiryId) {
-            const fetchLogs = async () => {
-                try {
-                    const response = await apiRequest<any[]>(`/api/logs/${enquiryId}`, {
-                        method: 'GET'
-                    });
-
-                    if (Array.isArray(response)) {
-                        const fetchedLogs: Log[] = response
-                            .map(item => ({
-                                id: item.id,
-                                title: item.title,
-                                description: item.description,
-                                author: item.User?.role || 'User',
-                                timestamp: new Date(item.createdAt).toLocaleString()
-                            }))
-                            .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()); // Sort newest first
-
-                        setLogs(fetchedLogs);
-                    }
-                } catch (err) {
-                    console.error('Failed to fetch logs:', err);
-                }
-            };
             fetchLogs();
         }
     }, [enquiryId]);
@@ -71,7 +70,6 @@ export default function ActivityTabs({ enquiryId, billingDetails, onUpdateBillin
         try {
             if (editingLogId) {
                 // Edit existing log
-                // PUT /api/logs/:id
                 await apiRequest<{ message: string, log: any }>(`/api/logs/${editingLogId}`, {
                     method: 'PUT',
                     body: {
@@ -79,23 +77,10 @@ export default function ActivityTabs({ enquiryId, billingDetails, onUpdateBillin
                         description: newLog.description
                     }
                 });
-
-                // Update local state
-                setLogs(prev => prev.map(log =>
-                    log.id === editingLogId
-                        ? {
-                            ...log,
-                            title: newLog.title,
-                            description: newLog.description,
-                            // timestamp: new Date().toLocaleString() // keeping original timestamp or using updated if backend provided
-                        }
-                        : log
-                ));
                 alert('Log updated successfully!');
             } else {
                 // Create new log
-                // Expecting an array of logs (or the created log wrapped in array)
-                const response = await apiRequest<any[]>('/api/logs', {
+                await apiRequest<any[]>('/api/logs', {
                     method: 'POST',
                     body: {
                         enquiryId,
@@ -103,23 +88,11 @@ export default function ActivityTabs({ enquiryId, billingDetails, onUpdateBillin
                         description: newLog.description
                     }
                 });
-
-                if (Array.isArray(response) && response.length > 0) {
-                    // Map the backend response to frontend Log interface
-                    const createdLogs: Log[] = response.map(item => ({
-                        id: item.id,
-                        title: item.title,
-                        description: item.description,
-                        // Use nested User role if available, fallback to current session role
-                        author: item.User?.role || role || 'User',
-                        timestamp: new Date(item.createdAt).toLocaleString()
-                    }));
-
-                    // Prepend new logs
-                    setLogs(prev => [...createdLogs, ...prev]);
-                    alert('Log added successfully!');
-                }
+                alert('Log added successfully!');
             }
+
+            // Refetch logs to update list
+            await fetchLogs();
 
             // Cleanup
             setNewLog({ title: '', description: '' });
@@ -169,7 +142,7 @@ export default function ActivityTabs({ enquiryId, billingDetails, onUpdateBillin
             </div>
 
             {/* Tab Content */}
-            <div className="p-6 flex-1 overflow-y-auto">
+            <div className="p-6 flex-1 overflow-y-auto custom-scrollbar">
                 {activeTab === 'notes' ? (
                     <div className="space-y-6">
                         <div className="flex justify-end">
