@@ -45,7 +45,7 @@ export default function ActivityTabs({ enquiryId, billingDetails, onUpdateBillin
                         id: item.id,
                         title: item.title,
                         description: item.description,
-                        author: item.User?.role || 'User',
+                        author: item.User?.name || item.User?.role || 'Unknown User',
                         timestamp: new Date(item.createdAt).toLocaleString()
                     }))
                     .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()); // Sort newest first

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router';
 import nammaqa from '../assets/nammaqa.jpg';
 
@@ -98,8 +98,19 @@ const NavItem = ({ icon, label, isCollapsed, isActive = false, onClick }: NavIte
 export default function MainContent({ children }: { children: React.ReactNode }) {
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [isMobileOpen, setIsMobileOpen] = useState(false);
+    const [fullRoleName, setFullRoleName] = useState('User');
     const navigate = useNavigate();
     const location = useLocation();
+
+    // Fetch user info from localStorage
+    useEffect(() => {
+        const role = localStorage.getItem('userRole');
+        if (role) {
+            setFullRoleName(role);
+        } else {
+            setFullRoleName('User');
+        }
+    }, []);
 
     const navItems = [
         { icon: <DashboardIcon />, label: 'Dashboard', path: '/dashboard' },
@@ -269,13 +280,13 @@ export default function MainContent({ children }: { children: React.ReactNode })
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                                 </svg>
                             </button>
-                            {/* User Avatar */}
-                            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-semibold text-sm shadow-lg">
-                                JD
+                            {/* User Info - No Avatar */}
+                            <div className="text-sm font-medium text-slate-700">
+                                Hi, {fullRoleName}
                             </div>
                         </div>
                     </div>
-                </header>
+                </header>Logged by
 
                 {/* Scrollable Content Area */}
                 <div className="p-4 lg:p-8 overflow-y-auto">
