@@ -84,7 +84,7 @@ export default function CandidateInfo({ enquiry, onUpdate }: CandidateInfoProps)
             <div className="p-4 border-b border-slate-200 flex justify-between items-center bg-slate-50 rounded-t-lg">
                 <h3 className="font-semibold text-slate-800">About this candidate</h3>
                 {!isEditing ? (
-                    role === 'COUNSELLOR' && (
+                    (role === 'COUNSELLOR' || role === 'ADMIN') && (
                         <button
                             onClick={handleEditClick}
                             className="text-indigo-600 hover:text-indigo-700 text-sm font-medium"
