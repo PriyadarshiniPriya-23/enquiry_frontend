@@ -141,13 +141,13 @@ const LoginPage = () => {
                     </button>
                 </form>
 
-                {/* Footer */}
+                {/* Footer
                 <p className="mt-6 text-center text-sm text-gray-500">
                     Don't have an account?{" "}
                     <a href="#" className="text-indigo-600 font-medium hover:underline">
                         Sign up
                     </a>
-                </p>
+                </p> */}
             </div>
         </div>
     );
