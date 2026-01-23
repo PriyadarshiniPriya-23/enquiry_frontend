@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { apiRequest } from '../utils/api';
 
@@ -6,6 +7,11 @@ interface Subject {
     id: number;
     name: string;
     code: string;
+    imageUrl?: string;
+    overview?: string;
+    syllabus?: string;
+    prerequisites?: string;
+    startDate?: string;
     createdAt?: string;
     updatedAt?: string;
 }
@@ -14,6 +20,11 @@ interface Package {
     id: number;
     name: string;
     code: string;
+    imageUrl?: string;
+    overview?: string;
+    syllabus?: string;
+    prerequisites?: string;
+    startDate?: string;
     createdAt?: string;
     updatedAt?: string;
     Subjects: Subject[];
@@ -55,6 +66,7 @@ export default function PackageSubject() {
     const [subjects, setSubjects] = useState<Subject[]>([]);
     const [packages, setPackages] = useState<Package[]>([]);
     const [loading, setLoading] = useState(false);
+    const [formLoading, setFormLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
     // Modal states
@@ -64,8 +76,8 @@ export default function PackageSubject() {
     const [editingPackage, setEditingPackage] = useState<Package | null>(null);
 
     // Form states
-    const [subjectForm, setSubjectForm] = useState({ name: '', code: '' });
-    const [packageForm, setPackageForm] = useState({ name: '', code: '', subjectIds: [] as number[] });
+    const [subjectForm, setSubjectForm] = useState({ name: '', code: '', imageUrl: '', overview: '', syllabus: '', prerequisites: '', startDate: '' });
+    const [packageForm, setPackageForm] = useState({ name: '', code: '', imageUrl: '', overview: '', syllabus: '', prerequisites: '', startDate: '', subjectIds: [] as number[], });
     const [subjectSearchQuery, setSubjectSearchQuery] = useState('');
 
     // Fetch data on mount and tab change
@@ -112,10 +124,10 @@ export default function PackageSubject() {
     const openSubjectModal = (subject?: Subject) => {
         if (subject) {
             setEditingSubject(subject);
-            setSubjectForm({ name: subject.name, code: subject.code });
+            setSubjectForm({ name: subject.name, code: subject.code, imageUrl: subject.imageUrl || '', overview: subject.overview || '', syllabus: subject.syllabus || '', prerequisites: subject.prerequisites || '', startDate: subject.startDate || '' });
         } else {
             setEditingSubject(null);
-            setSubjectForm({ name: '', code: '' });
+            setSubjectForm({ name: '', code: '', imageUrl: '', overview: '', syllabus: '', prerequisites: '', startDate: '' });
         }
         setError(null);
         setIsSubjectModalOpen(true);
@@ -127,7 +139,7 @@ export default function PackageSubject() {
             return;
         }
 
-        setLoading(true);
+        setFormLoading(true);
         setError(null);
 
         try {
@@ -146,7 +158,7 @@ export default function PackageSubject() {
             }
             await fetchSubjects();
             setIsSubjectModalOpen(false);
-            setSubjectForm({ name: '', code: '' });
+            setSubjectForm({ name: '', code: '', imageUrl: '', overview: '', syllabus: '', prerequisites: '', startDate: '' });
         } catch (err) {
             setError(err instanceof Error ? err.message : 'An error occurred');
             console.error('Error saving subject:', err);
@@ -183,10 +195,10 @@ export default function PackageSubject() {
             setEditingPackage(pkg);
             // Convert Subjects array to subjectIds array
             const subjectIds = pkg.Subjects.map(s => s.id);
-            setPackageForm({ name: pkg.name, code: pkg.code, subjectIds });
+            setPackageForm({ name: pkg.name, code: pkg.code, imageUrl: pkg.imageUrl || '', overview: pkg.overview || '', syllabus: pkg.syllabus || '', prerequisites: pkg.prerequisites || '', startDate: pkg.startDate || '', subjectIds });
         } else {
             setEditingPackage(null);
-            setPackageForm({ name: '', code: '', subjectIds: [] });
+            setPackageForm({ name: '', code: '', imageUrl: '', overview: '', syllabus: '', prerequisites: '', startDate: '', subjectIds: [] });
         }
         setSubjectSearchQuery(''); // Reset search when opening modal
         setError(null);
@@ -199,7 +211,7 @@ export default function PackageSubject() {
             return;
         }
 
-        setLoading(true);
+        setFormLoading(true);
         setError(null);
 
         try {
@@ -226,7 +238,7 @@ export default function PackageSubject() {
             }
             await fetchPackages();
             setIsPackageModalOpen(false);
-            setPackageForm({ name: '', code: '', subjectIds: [] });
+            setPackageForm({ name: '', code: '', imageUrl: '', overview: '', syllabus: '', prerequisites: '', startDate: '', subjectIds: [] });
         } catch (err) {
             setError(err instanceof Error ? err.message : 'An error occurred');
             console.error('Error saving package:', err);
@@ -296,6 +308,7 @@ export default function PackageSubject() {
         return filteredSubjects.every(subject => packageForm.subjectIds.includes(subject.id));
     };
 
+
     return (
         <div className="space-y-4">
             {/* Tabs */}
@@ -346,6 +359,16 @@ export default function PackageSubject() {
                                 <tr>
                                     <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 uppercase">Subject Name</th>
                                     <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 uppercase">Subject Code</th>
+                                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 uppercase">Image</th>
+                                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 uppercase">Overview</th>
+                                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 uppercase">Syllabus</th>
+                                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 uppercase">Prerequisites</th>
+                                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 uppercase">StartDate</th>
+
+
+
+
+
                                     <th className="px-4 py-3 text-right text-xs font-semibold text-slate-700 uppercase">Actions</th>
                                 </tr>
                             </thead>
@@ -367,6 +390,14 @@ export default function PackageSubject() {
                                         <tr key={subject.id} className="hover:bg-slate-50 transition-colors">
                                             <td className="px-4 py-3 text-sm text-slate-800">{subject.name}</td>
                                             <td className="px-4 py-3 text-sm text-slate-600">{subject.code}</td>
+                                            <td className="px-4 py-3 text-sm text-slate-600">{subject.imageUrl || 'N/A'}</td>
+                                            <td className="px-4 py-3 text-sm text-slate-600">{subject.overview || 'N/A'}</td>
+                                            <td className="px-4 py-3 text-sm text-slate-600">{subject.syllabus || 'N/A'}</td>
+                                            <td className="px-4 py-3 text-sm text-slate-600">{subject.prerequisites || 'N/A'}</td>
+                                            <td className="px-4 py-3 text-sm text-slate-600">{subject.startDate || 'N/A'}</td>
+
+
+
                                             <td className="px-4 py-3 text-right">
                                                 <button
                                                     onClick={() => openSubjectModal(subject)}
@@ -395,7 +426,15 @@ export default function PackageSubject() {
                                     <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 uppercase">Package Name</th>
                                     <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 uppercase">Package Code</th>
                                     <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 uppercase">Subjects</th>
+                                    <th className="px-4 py-3 text-right text-xs font-semibold text-slate-700 uppercase">Image</th>
+                                    <th className="px-4 py-3 text-right text-xs font-semibold text-slate-700 uppercase">Overview</th>
+                                    <th className="px-4 py-3 text-right text-xs font-semibold text-slate-700 uppercase">Syllabus</th>
+                                    <th className="px-4 py-3 text-right text-xs font-semibold text-slate-700 uppercase">Prerequisites</th>
+                                    <th className="px-4 py-3 text-right text-xs font-semibold text-slate-700 uppercase">StartDate</th>
                                     <th className="px-4 py-3 text-right text-xs font-semibold text-slate-700 uppercase">Actions</th>
+
+
+
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-200">
@@ -416,6 +455,11 @@ export default function PackageSubject() {
                                         <tr key={pkg.id} className="hover:bg-slate-50 transition-colors">
                                             <td className="px-4 py-3 text-sm text-slate-800">{pkg.name}</td>
                                             <td className="px-4 py-3 text-sm text-slate-600">{pkg.code}</td>
+                                            <td className="px-4 py-3 text-sm text-slate-600">{pkg.imageUrl || 'N/A'}</td>
+                                            <td className="px-4 py-3 text-sm text-slate-600">{pkg.overview || 'N/A'}</td>
+                                            <td className="px-4 py-3 text-sm text-slate-600">{pkg.syllabus || 'N/A'}</td>
+                                            <td className="px-4 py-3 text-sm text-slate-600">{pkg.prerequisites || 'N/A'}</td>
+                                            <td className="px-4 py-3 text-sm text-slate-600">{pkg.startDate || 'N/A'}</td>
                                             <td className="px-4 py-3 text-sm text-slate-600 max-w-xs truncate">
                                                 {pkg.Subjects?.map(s => s.name).join(', ') || 'No subjects'}
                                             </td>
@@ -489,6 +533,107 @@ export default function PackageSubject() {
                                     placeholder="e.g., MATH101"
                                 />
                             </div>
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">
+                                    Image
+                                </label>
+
+                                <div className="relative w-full">
+                                    <input
+                                        type="text"
+                                        name="image"
+                                        placeholder="Enter image URL"
+                                        value={packageForm.imageUrl}
+                                        onChange={(e) =>
+                                            setPackageForm({
+                                                ...packageForm,
+                                                imageUrl: e.target.value,
+                                            })
+                                        }
+                                        className="w-full border border-gray-300 rounded-md px-3 py-1 pr-20 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    />
+
+                                    <label
+                                        htmlFor="imageFile"
+                                        className="absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer rounded-md bg-gray-200 px-3 py-1 text-sm text-gray-700 hover:bg-gray-300"
+                                    >
+                                        File
+                                    </label>
+
+                                    <input
+                                        type="file"
+                                        id="imageFile"
+                                        accept="image/*"
+                                        className="hidden"
+                                        onChange={(e) => {
+                                            const file = e.target.files?.[0];
+                                            if (file) {
+                                                setPackageForm({
+                                                    ...packageForm,
+                                                    imageUrl: file.name,
+                                                });
+                                            }
+                                        }}
+                                    />
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">
+                                    Overview
+                                </label>
+                                <input
+                                    type="text"
+                                    value={subjectForm.overview}
+                                    onChange={(e) => setSubjectForm({ ...subjectForm, overview: e.target.value })}
+                                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                    placeholder="DESCRIPTION OF SUBJECT"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">
+                                    Syllabus
+                                </label>
+                                <input
+                                    type="text"
+                                    value={subjectForm.syllabus}
+                                    onChange={(e) => setSubjectForm({ ...subjectForm, syllabus: e.target.value })}
+                                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                    placeholder="e.g., SYLLABUS"
+                                />
+                            </div>
+
+
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">
+                                    Prerequisites
+                                </label>
+                                <input
+                                    type="text"
+                                    value={subjectForm.prerequisites}
+                                    onChange={(e) => setSubjectForm({ ...subjectForm, prerequisites: e.target.value })}
+                                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                    placeholder="e.g., PREREQUISITES"
+                                />
+                            </div>
+
+
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">
+                                    Start Date
+                                </label>
+
+                                <input
+                                    type="date"
+                                    value={subjectForm.startDate}
+                                    onChange={(e) =>
+                                        setSubjectForm({ ...subjectForm, startDate: e.target.value })}
+                                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                />
+                            </div>
+
+
                         </div>
                         <div className="flex justify-end gap-2 px-6 py-4 border-t border-slate-200">
                             <button
@@ -499,10 +644,10 @@ export default function PackageSubject() {
                             </button>
                             <button
                                 onClick={saveSubject}
-                                disabled={loading}
+                                disabled={formLoading}
                                 className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                                {loading ? 'Saving...' : editingSubject ? 'Update' : 'Create'}
+                                {formLoading ? 'Saving...' : editingSubject ? 'Update' : 'Create'}
                             </button>
                         </div>
                     </div>
@@ -571,7 +716,6 @@ export default function PackageSubject() {
                                         </button>
                                     )}
                                 </div>
-
                                 {subjects.length > 0 && (
                                     <div className="relative mb-2">
                                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -616,6 +760,104 @@ export default function PackageSubject() {
                                     )}
                                 </div>
                             </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">
+                                    Image
+                                </label>
+
+                                <div className="relative w-full">
+                                    <input
+                                        type="text"
+                                        name="image"
+                                        placeholder="Enter image URL"
+                                        value={packageForm.imageUrl}
+                                        onChange={(e) =>
+                                            setPackageForm({
+                                                ...packageForm,
+                                                imageUrl: e.target.value,
+                                            })
+                                        }
+                                        className="w-full border border-gray-300 rounded-md px-3 py-1 pr-20 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    />
+
+                                    <label
+                                        htmlFor="imageFile"
+                                        className="absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer rounded-md bg-gray-200 px-3 py-1 text-sm text-gray-700 hover:bg-gray-300"
+                                    >
+                                        File
+                                    </label>
+
+                                    <input
+                                        type="file"
+                                        id="imageFile"
+                                        accept="image/*"
+                                        className="hidden"
+                                        onChange={(e) => {
+                                            const file = e.target.files?.[0];
+                                            if (file) {
+                                                setPackageForm({
+                                                    ...packageForm,
+                                                    imageUrl: file.name,
+                                                });
+                                            }
+                                        }}
+                                    />
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">
+                                    Overview
+                                </label>
+                                <input
+                                    type="text"
+                                    value={packageForm.overview}
+                                    onChange={(e) => setPackageForm({ ...packageForm, overview: e.target.value })}
+                                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                    placeholder="DESCRIPTION OF SUBJECT"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">
+                                    Syllabus
+                                </label>
+                                <input
+                                    type="text"
+                                    value={packageForm.syllabus}
+                                    onChange={(e) => setPackageForm({ ...packageForm, syllabus: e.target.value })}
+                                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                    placeholder="e.g., SYLLABUS"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">
+                                    Prerequisites
+                                </label>
+                                <input
+                                    type="text"
+                                    value={packageForm.prerequisites}
+                                    onChange={(e) => setPackageForm({ ...packageForm, prerequisites: e.target.value })}
+                                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                    placeholder="e.g., PREREQUISITES"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">
+                                    Start Date
+                                </label>
+
+                                <input
+                                    type="date"
+                                    value={packageForm.startDate}
+                                    onChange={(e) =>
+                                        setPackageForm({ ...packageForm, startDate: e.target.value })}
+                                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                />
+                            </div>
                         </div>
                         <div className="flex justify-end gap-2 px-6 py-4 border-t border-slate-200">
                             <button
@@ -626,10 +868,10 @@ export default function PackageSubject() {
                             </button>
                             <button
                                 onClick={savePackage}
-                                disabled={loading}
+                                disabled={formLoading}
                                 className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                                {loading ? 'Saving...' : editingPackage ? 'Update' : 'Create'}
+                                {formLoading ? 'Saving...' : editingPackage ? 'Update' : 'Create'}
                             </button>
                         </div>
                     </div>
@@ -638,3 +880,4 @@ export default function PackageSubject() {
         </div>
     );
 }
+
