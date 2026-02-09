@@ -6,11 +6,11 @@ interface User {
     id: string;
     name: string;
     email: string;
-    role: 'HR' | 'COUNSELLOR' | 'ACCOUNTS';
+    role: 'HR' | 'COUNSELLOR' | 'ACCOUNTS' | 'INSTRUCTOR';
     createdAt?: string;
 }
 
-type UserRole = 'HR' | 'COUNSELLOR' | 'ACCOUNTS';
+type UserRole = 'HR' | 'COUNSELLOR' | 'ACCOUNTS' | 'INSTRUCTOR';
 
 // Icons
 const PlusIcon = () => (
@@ -52,7 +52,7 @@ export default function UserRoles() {
         role: 'HR' as UserRole,
     });
 
-    const roleOptions: UserRole[] = ['HR', 'COUNSELLOR', 'ACCOUNTS'];
+    const roleOptions: UserRole[] = ['HR', 'COUNSELLOR', 'ACCOUNTS', 'INSTRUCTOR'];
 
     // Fetch users on component mount
     useEffect(() => {
@@ -189,6 +189,8 @@ export default function UserRoles() {
                 return 'bg-green-100 text-green-700';
             case 'ACCOUNTS':
                 return 'bg-purple-100 text-purple-700';
+            case 'INSTRUCTOR':
+                return 'bg-orange-100 text-orange-700';
             default:
                 return 'bg-slate-100 text-slate-700';
         }

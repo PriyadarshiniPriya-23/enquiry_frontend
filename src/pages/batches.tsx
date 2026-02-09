@@ -100,11 +100,11 @@ export default function Batches() {
         fetchInstructors();
     }, []);
 
-    // Fetch Instructors
+    // Fetch Instructors (users with role=instructor)
     const fetchInstructors = async () => {
         try {
-            const data = await apiRequest('/api/instructors/list/all', { method: 'GET' });
-            // API may return { success, data: [...] }
+            const data = await apiRequest('/api/users/instructors', { method: 'GET' });
+            // API returns { success, data: [...] }
             if (Array.isArray(data)) {
                 setInstructors(data as any);
             } else if (data && typeof data === 'object' && 'data' in data) {
