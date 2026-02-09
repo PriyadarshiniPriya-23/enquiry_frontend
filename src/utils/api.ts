@@ -4,6 +4,7 @@ interface ApiRequestOptions {
     method?: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
     body?: any;
     headers?: Record<string, string>;
+    isFormData?: boolean;
 }
 
 export const apiRequest = async <T = any>(
@@ -28,7 +29,12 @@ export const apiRequest = async <T = any>(
         },
     };
 
-    if (options.body) {
+    // Handle FormData (for file uploads)
+    if (options.isFormData && options.body instanceof FormData) {
+        // Remove Content-Type header to let browser set it automatically with boundary
+        delete config.headers['Content-Type'];
+        config.body = options.body;
+    } else if (options.body) {
         config.body = JSON.stringify(options.body);
     }
 

@@ -7,11 +7,10 @@ interface Subject {
     id: number;
     name: string;
     code: string;
-    imageUrl?: string;
+    image?: string;
     overview?: string;
     syllabus?: string;
     prerequisites?: string;
-    startDate?: string;
     createdAt?: string;
     updatedAt?: string;
 }
@@ -20,11 +19,10 @@ interface Package {
     id: number;
     name: string;
     code: string;
-    imageUrl?: string;
+    image?: string;
     overview?: string;
     syllabus?: string;
     prerequisites?: string;
-    startDate?: string;
     createdAt?: string;
     updatedAt?: string;
     Subjects: Subject[];
@@ -76,8 +74,8 @@ export default function PackageSubject() {
     const [editingPackage, setEditingPackage] = useState<Package | null>(null);
 
     // Form states
-    const [subjectForm, setSubjectForm] = useState({ name: '', code: '', imageUrl: '', overview: '', syllabus: '', prerequisites: '', startDate: '' });
-    const [packageForm, setPackageForm] = useState({ name: '', code: '', imageUrl: '', overview: '', syllabus: '', prerequisites: '', startDate: '', subjectIds: [] as number[], });
+    const [subjectForm, setSubjectForm] = useState({ name: '', code: '', image: '', overview: '', syllabus: '', prerequisites: ''});
+    const [packageForm, setPackageForm] = useState({ name: '', code: '', image: '', overview: '', syllabus: '', prerequisites: '', subjectIds: [] as number[], });
     const [subjectSearchQuery, setSubjectSearchQuery] = useState('');
 
     // Fetch data on mount and tab change
@@ -124,10 +122,10 @@ export default function PackageSubject() {
     const openSubjectModal = (subject?: Subject) => {
         if (subject) {
             setEditingSubject(subject);
-            setSubjectForm({ name: subject.name, code: subject.code, imageUrl: subject.imageUrl || '', overview: subject.overview || '', syllabus: subject.syllabus || '', prerequisites: subject.prerequisites || '', startDate: subject.startDate || '' });
+            setSubjectForm({ name: subject.name, code: subject.code, image: subject.image || '', overview: subject.overview || '', syllabus: subject.syllabus || '', prerequisites: subject.prerequisites || ''});
         } else {
             setEditingSubject(null);
-            setSubjectForm({ name: '', code: '', imageUrl: '', overview: '', syllabus: '', prerequisites: '', startDate: '' });
+            setSubjectForm({ name: '', code: '', image: '', overview: '', syllabus: '', prerequisites: '' });
         }
         setError(null);
         setIsSubjectModalOpen(true);
@@ -143,27 +141,51 @@ export default function PackageSubject() {
         setError(null);
 
         try {
+            // Create FormData for subject details
+            const formData = new FormData();
+            formData.append('name', subjectForm.name);
+            formData.append('code', subjectForm.code);
+
+            // Append image file if selected (backend will handle Cloudinary upload)
+            const imageInput = document.querySelector('input[type="file"]#subjectImageFile') as HTMLInputElement;
+            if (imageInput && imageInput.files && imageInput.files.length > 0) {
+                formData.append('image', imageInput.files[0]);
+            }
+
+            // Append JSON fields as JSON strings
+          if (subjectForm.overview) {
+    formData.append('overview', subjectForm.overview);
+}
+if (subjectForm.syllabus) {
+    formData.append('syllabus', subjectForm.syllabus);
+}
+if (subjectForm.prerequisites) {
+    formData.append('prerequisites', subjectForm.prerequisites);
+}
+
             if (editingSubject) {
-                // Update subject (if you have an update endpoint)
+                // Update subject
                 await apiRequest(`/api/subjects/${editingSubject.id}`, {
                     method: 'PUT',
-                    body: { name: subjectForm.name, code: subjectForm.code },
+                    body: formData,
+                    isFormData: true,
                 });
             } else {
                 // Create subject
                 await apiRequest('/api/subjects', {
                     method: 'POST',
-                    body: { name: subjectForm.name, code: subjectForm.code },
+                    body: formData,
+                    isFormData: true,
                 });
             }
             await fetchSubjects();
             setIsSubjectModalOpen(false);
-            setSubjectForm({ name: '', code: '', imageUrl: '', overview: '', syllabus: '', prerequisites: '', startDate: '' });
+            setSubjectForm({ name: '', code: '', image: '', overview: '', syllabus: '', prerequisites: '' });
         } catch (err) {
             setError(err instanceof Error ? err.message : 'An error occurred');
             console.error('Error saving subject:', err);
         } finally {
-            setLoading(false);
+            setFormLoading(false);
         }
     };
 
@@ -195,10 +217,10 @@ export default function PackageSubject() {
             setEditingPackage(pkg);
             // Convert Subjects array to subjectIds array
             const subjectIds = pkg.Subjects.map(s => s.id);
-            setPackageForm({ name: pkg.name, code: pkg.code, imageUrl: pkg.imageUrl || '', overview: pkg.overview || '', syllabus: pkg.syllabus || '', prerequisites: pkg.prerequisites || '', startDate: pkg.startDate || '', subjectIds });
+            setPackageForm({ name: pkg.name, code: pkg.code, image: pkg.image || '', overview: pkg.overview || '', syllabus: pkg.syllabus || '', prerequisites: pkg.prerequisites || '',  subjectIds });
         } else {
             setEditingPackage(null);
-            setPackageForm({ name: '', code: '', imageUrl: '', overview: '', syllabus: '', prerequisites: '', startDate: '', subjectIds: [] });
+            setPackageForm({ name: '', code: '', image: '', overview: '', syllabus: '', prerequisites: '',  subjectIds: [] });
         }
         setSubjectSearchQuery(''); // Reset search when opening modal
         setError(null);
@@ -215,35 +237,56 @@ export default function PackageSubject() {
         setError(null);
 
         try {
+            // Create FormData for package details
+            const formData = new FormData();
+            formData.append('name', packageForm.name);
+            formData.append('code', packageForm.code);
+
+            // Append image file if selected (backend will handle Cloudinary upload)
+            const imageInput = document.querySelector('input[type="file"]#packageImageFile') as HTMLInputElement;
+            if (imageInput && imageInput.files && imageInput.files.length > 0) {
+                formData.append('image', imageInput.files[0]);
+            }
+
+            // Send these fields as JSON so the backend can store them as JSON columns
+            if (packageForm.overview) {
+                formData.append('overview', JSON.stringify(packageForm.overview));
+            }
+            if (packageForm.syllabus) {
+                formData.append('syllabus', JSON.stringify(packageForm.syllabus));
+            }
+            if (packageForm.prerequisites) {
+                formData.append('prerequisites', JSON.stringify(packageForm.prerequisites));
+            }
+
+            // Append subject IDs as JSON array string
+            if (packageForm.subjectIds && packageForm.subjectIds.length > 0) {
+                formData.append('subjectIds', JSON.stringify(packageForm.subjectIds));
+            }
+
             if (editingPackage) {
-                // Update package (if you have an update endpoint)
+                // Update package
                 await apiRequest(`/api/packages/${editingPackage.id}`, {
                     method: 'PUT',
-                    body: {
-                        name: packageForm.name,
-                        code: packageForm.code,
-                        subjectIds: packageForm.subjectIds,
-                    },
+                    body: formData,
+                    isFormData: true,
                 });
             } else {
                 // Create package
                 await apiRequest('/api/packages', {
                     method: 'POST',
-                    body: {
-                        name: packageForm.name,
-                        code: packageForm.code,
-                        subjectIds: packageForm.subjectIds,
-                    },
+                    body: formData,
+                    isFormData: true,
                 });
             }
             await fetchPackages();
             setIsPackageModalOpen(false);
-            setPackageForm({ name: '', code: '', imageUrl: '', overview: '', syllabus: '', prerequisites: '', startDate: '', subjectIds: [] });
+            setPackageForm({ name: '', code: '', image: '', overview: '', syllabus: '', prerequisites: '', subjectIds: [] });
         } catch (err) {
             setError(err instanceof Error ? err.message : 'An error occurred');
             console.error('Error saving package:', err);
         } finally {
-            setLoading(false);
+            setFormLoading(false);
         }
     };
 
@@ -363,12 +406,6 @@ export default function PackageSubject() {
                                     <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 uppercase">Overview</th>
                                     <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 uppercase">Syllabus</th>
                                     <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 uppercase">Prerequisites</th>
-                                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 uppercase">StartDate</th>
-
-
-
-
-
                                     <th className="px-4 py-3 text-right text-xs font-semibold text-slate-700 uppercase">Actions</th>
                                 </tr>
                             </thead>
@@ -390,14 +427,20 @@ export default function PackageSubject() {
                                         <tr key={subject.id} className="hover:bg-slate-50 transition-colors">
                                             <td className="px-4 py-3 text-sm text-slate-800">{subject.name}</td>
                                             <td className="px-4 py-3 text-sm text-slate-600">{subject.code}</td>
-                                            <td className="px-4 py-3 text-sm text-slate-600">{subject.imageUrl || 'N/A'}</td>
-                                            <td className="px-4 py-3 text-sm text-slate-600">{subject.overview || 'N/A'}</td>
-                                            <td className="px-4 py-3 text-sm text-slate-600">{subject.syllabus || 'N/A'}</td>
-                                            <td className="px-4 py-3 text-sm text-slate-600">{subject.prerequisites || 'N/A'}</td>
-                                            <td className="px-4 py-3 text-sm text-slate-600">{subject.startDate || 'N/A'}</td>
-
-
-
+                                            <td className="px-4 py-3">
+                                                {subject.image ? (
+                                                    <img 
+                                                        src={subject.image} 
+                                                        alt={subject.name}
+                                                        className="w-16 h-16 object-cover rounded-lg"
+                                                    />
+                                                ) : (
+                                                    <span className="text-slate-500">No image</span>
+                                                )}
+                                            </td>
+                                            <td className="px-4 py-3 text-sm text-slate-600">{typeof subject.overview === 'object' ? JSON.stringify(subject.overview) : (subject.overview || 'N/A')}</td>
+                                            <td className="px-4 py-3 text-sm text-slate-600">{typeof subject.syllabus === 'object' ? JSON.stringify(subject.syllabus) : (subject.syllabus || 'N/A')}</td>
+                                            <td className="px-4 py-3 text-sm text-slate-600">{typeof subject.prerequisites === 'object' ? JSON.stringify(subject.prerequisites) : (subject.prerequisites || 'N/A')}</td>
                                             <td className="px-4 py-3 text-right">
                                                 <button
                                                     onClick={() => openSubjectModal(subject)}
@@ -430,7 +473,6 @@ export default function PackageSubject() {
                                     <th className="px-4 py-3 text-right text-xs font-semibold text-slate-700 uppercase">Overview</th>
                                     <th className="px-4 py-3 text-right text-xs font-semibold text-slate-700 uppercase">Syllabus</th>
                                     <th className="px-4 py-3 text-right text-xs font-semibold text-slate-700 uppercase">Prerequisites</th>
-                                    <th className="px-4 py-3 text-right text-xs font-semibold text-slate-700 uppercase">StartDate</th>
                                     <th className="px-4 py-3 text-right text-xs font-semibold text-slate-700 uppercase">Actions</th>
 
 
@@ -455,14 +497,23 @@ export default function PackageSubject() {
                                         <tr key={pkg.id} className="hover:bg-slate-50 transition-colors">
                                             <td className="px-4 py-3 text-sm text-slate-800">{pkg.name}</td>
                                             <td className="px-4 py-3 text-sm text-slate-600">{pkg.code}</td>
-                                            <td className="px-4 py-3 text-sm text-slate-600">{pkg.imageUrl || 'N/A'}</td>
-                                            <td className="px-4 py-3 text-sm text-slate-600">{pkg.overview || 'N/A'}</td>
-                                            <td className="px-4 py-3 text-sm text-slate-600">{pkg.syllabus || 'N/A'}</td>
-                                            <td className="px-4 py-3 text-sm text-slate-600">{pkg.prerequisites || 'N/A'}</td>
-                                            <td className="px-4 py-3 text-sm text-slate-600">{pkg.startDate || 'N/A'}</td>
                                             <td className="px-4 py-3 text-sm text-slate-600 max-w-xs truncate">
                                                 {pkg.Subjects?.map(s => s.name).join(', ') || 'No subjects'}
                                             </td>
+                                            <td className="px-4 py-3">
+                                                {pkg.image ? (
+                                                    <img 
+                                                        src={pkg.image} 
+                                                        alt={pkg.name}
+                                                        className="w-16 h-16 object-cover rounded-lg"
+                                                    />
+                                                ) : (
+                                                    <span className="text-slate-500">No image</span>
+                                                )}
+                                            </td>
+                                            <td className="px-4 py-3 text-sm text-slate-600">{typeof pkg.overview === 'object' ? JSON.stringify(pkg.overview) : (pkg.overview || 'N/A')}</td>
+                                            <td className="px-4 py-3 text-sm text-slate-600">{typeof pkg.syllabus === 'object' ? JSON.stringify(pkg.syllabus) : (pkg.syllabus || 'N/A')}</td>
+                                            <td className="px-4 py-3 text-sm text-slate-600">{typeof pkg.prerequisites === 'object' ? JSON.stringify(pkg.prerequisites) : (pkg.prerequisites || 'N/A')}</td>
                                             <td className="px-4 py-3 text-right">
                                                 <button
                                                     onClick={() => openPackageModal(pkg)}
@@ -489,8 +540,8 @@ export default function PackageSubject() {
             {/* Subject Modal */}
             {isSubjectModalOpen && (
                 <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-xl shadow-xl w-full max-w-md">
-                        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
+                    <div className="bg-white rounded-xl shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+                        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 sticky top-0 bg-white">
                             <h3 className="text-lg font-semibold text-slate-800">
                                 {editingSubject ? 'Edit Subject' : 'Add Subject'}
                             </h3>
@@ -501,141 +552,140 @@ export default function PackageSubject() {
                                 <CloseIcon />
                             </button>
                         </div>
-                        <div className="px-6 py-4 space-y-4">
-                            {/* Error Message in Modal */}
-                            {error && (
-                                <div className="bg-rose-50 border border-rose-200 text-rose-700 px-3 py-2 rounded-lg text-sm">
-                                    {error}
-                                </div>
-                            )}
+                        <div className="grid grid-cols-2 gap-6 px-6 py-4">
+                            {/* Left Column - Form Fields */}
+                            <div className="space-y-4">
+                                {/* Error Message in Modal */}
+                                {error && (
+                                    <div className="bg-rose-50 border border-rose-200 text-rose-700 px-3 py-2 rounded-lg text-sm">
+                                        {error}
+                                    </div>
+                                )}
 
-                            <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">
-                                    Subject Name
-                                </label>
-                                <input
-                                    type="text"
-                                    value={subjectForm.name}
-                                    onChange={(e) => setSubjectForm({ ...subjectForm, name: e.target.value })}
-                                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                                    placeholder="e.g., Mathematics"
-                                />
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 mb-1">
+                                        Subject Name
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={subjectForm.name}
+                                        onChange={(e) => setSubjectForm({ ...subjectForm, name: e.target.value })}
+                                        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                        placeholder="e.g., Mathematics"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 mb-1">
+                                        Subject Code
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={subjectForm.code}
+                                        onChange={(e) => setSubjectForm({ ...subjectForm, code: e.target.value })}
+                                        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                        placeholder="e.g., MATH101"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 mb-1">
+                                        Overview
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={subjectForm.overview}
+                                        onChange={(e) => setSubjectForm({ ...subjectForm, overview: e.target.value })}
+                                        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                        placeholder="DESCRIPTION OF SUBJECT"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 mb-1">
+                                        Syllabus
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={subjectForm.syllabus}
+                                        onChange={(e) => setSubjectForm({ ...subjectForm, syllabus: e.target.value })}
+                                        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                        placeholder="e.g., SYLLABUS"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 mb-1">
+                                        Prerequisites
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={subjectForm.prerequisites}
+                                        onChange={(e) => setSubjectForm({ ...subjectForm, prerequisites: e.target.value })}
+                                        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                        placeholder="e.g., PREREQUISITES"
+                                    />
+                                </div>
                             </div>
-                            <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">
-                                    Subject Code
-                                </label>
-                                <input
-                                    type="text"
-                                    value={subjectForm.code}
-                                    onChange={(e) => setSubjectForm({ ...subjectForm, code: e.target.value })}
-                                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                                    placeholder="e.g., MATH101"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">
+
+                            {/* Right Column - Image */}
+                            <div className="flex flex-col">
+                                <label className="block text-sm font-medium text-slate-700 mb-3">
                                     Image
                                 </label>
 
-                                <div className="relative w-full">
-                                    <input
-                                        type="text"
-                                        name="image"
-                                        placeholder="Enter image URL"
-                                        value={packageForm.imageUrl}
-                                        onChange={(e) =>
-                                            setPackageForm({
-                                                ...packageForm,
-                                                imageUrl: e.target.value,
-                                            })
-                                        }
-                                        className="w-full border border-gray-300 rounded-md px-3 py-1 pr-20 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    />
+                                {/* Image Preview */}
+                                {subjectForm.image && typeof subjectForm.image === 'string' && subjectForm.image.startsWith('http') && (
+                                    <div className="mb-4">
+                                        <img 
+                                            src={subjectForm.image} 
+                                            alt="Subject Preview" 
+                                            className="w-full h-48 object-cover rounded-lg border border-slate-300"
+                                        />
+                                    </div>
+                                )}
 
+                                {subjectForm.image && typeof subjectForm.image === 'string' && subjectForm.image.startsWith('data:') && (
+                                    <div className="mb-4">
+                                        <img 
+                                            src={subjectForm.image} 
+                                            alt="Subject Preview" 
+                                            className="w-full h-48 object-cover rounded-lg border border-slate-300"
+                                        />
+                                    </div>
+                                )}
+
+                                <div>
                                     <label
-                                        htmlFor="imageFile"
-                                        className="absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer rounded-md bg-gray-200 px-3 py-1 text-sm text-gray-700 hover:bg-gray-300"
+                                        htmlFor="subjectImageFile"
+                                        className="w-full border-2 border-dashed border-slate-300 rounded-lg px-4 py-8 text-center cursor-pointer hover:bg-slate-50 transition-colors block"
                                     >
-                                        File
+                                        <span className="text-sm text-slate-600">
+                                            Click to upload image
+                                        </span>
                                     </label>
 
                                     <input
                                         type="file"
-                                        id="imageFile"
+                                        id="subjectImageFile"
                                         accept="image/*"
                                         className="hidden"
                                         onChange={(e) => {
                                             const file = e.target.files?.[0];
                                             if (file) {
-                                                setPackageForm({
-                                                    ...packageForm,
-                                                    imageUrl: file.name,
-                                                });
+                                                const reader = new FileReader();
+                                                reader.onloadend = () => {
+                                                    setSubjectForm({
+                                                        ...subjectForm,
+                                                        image: reader.result as string,
+                                                    });
+                                                };
+                                                reader.readAsDataURL(file);
                                             }
                                         }}
                                     />
                                 </div>
                             </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">
-                                    Overview
-                                </label>
-                                <input
-                                    type="text"
-                                    value={subjectForm.overview}
-                                    onChange={(e) => setSubjectForm({ ...subjectForm, overview: e.target.value })}
-                                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                                    placeholder="DESCRIPTION OF SUBJECT"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">
-                                    Syllabus
-                                </label>
-                                <input
-                                    type="text"
-                                    value={subjectForm.syllabus}
-                                    onChange={(e) => setSubjectForm({ ...subjectForm, syllabus: e.target.value })}
-                                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                                    placeholder="e.g., SYLLABUS"
-                                />
-                            </div>
-
-
-                            <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">
-                                    Prerequisites
-                                </label>
-                                <input
-                                    type="text"
-                                    value={subjectForm.prerequisites}
-                                    onChange={(e) => setSubjectForm({ ...subjectForm, prerequisites: e.target.value })}
-                                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                                    placeholder="e.g., PREREQUISITES"
-                                />
-                            </div>
-
-
-                            <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">
-                                    Start Date
-                                </label>
-
-                                <input
-                                    type="date"
-                                    value={subjectForm.startDate}
-                                    onChange={(e) =>
-                                        setSubjectForm({ ...subjectForm, startDate: e.target.value })}
-                                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                                />
-                            </div>
-
-
                         </div>
-                        <div className="flex justify-end gap-2 px-6 py-4 border-t border-slate-200">
+                        <div className="flex justify-end gap-2 px-6 py-4 border-t border-slate-200 sticky bottom-0 bg-white">
                             <button
                                 onClick={() => setIsSubjectModalOpen(false)}
                                 className="px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
@@ -657,8 +707,8 @@ export default function PackageSubject() {
             {/* Package Modal */}
             {isPackageModalOpen && (
                 <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-xl shadow-xl w-full max-w-md">
-                        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
+                    <div className="bg-white rounded-xl shadow-xl w-full max-w-5xl max-h-[90vh] overflow-y-auto">
+                        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 sticky top-0 bg-white">
                             <h3 className="text-lg font-semibold text-slate-800">
                                 {editingPackage ? 'Edit Package' : 'Add Package'}
                             </h3>
@@ -669,197 +719,200 @@ export default function PackageSubject() {
                                 <CloseIcon />
                             </button>
                         </div>
-                        <div className="px-6 py-4 space-y-4">
-                            {/* Error Message in Modal */}
-                            {error && (
-                                <div className="bg-rose-50 border border-rose-200 text-rose-700 px-3 py-2 rounded-lg text-sm">
-                                    {error}
-                                </div>
-                            )}
+                        <div className="grid grid-cols-2 gap-6 px-6 py-4">
+                            {/* Left Column - Form Fields */}
+                            <div className="space-y-4">
+                                {/* Error Message in Modal */}
+                                {error && (
+                                    <div className="bg-rose-50 border border-rose-200 text-rose-700 px-3 py-2 rounded-lg text-sm">
+                                        {error}
+                                    </div>
+                                )}
 
-                            <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">
-                                    Package Name
-                                </label>
-                                <input
-                                    type="text"
-                                    value={packageForm.name}
-                                    onChange={(e) => setPackageForm({ ...packageForm, name: e.target.value })}
-                                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                                    placeholder="e.g., Science Package"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">
-                                    Package Code
-                                </label>
-                                <input
-                                    type="text"
-                                    value={packageForm.code}
-                                    onChange={(e) => setPackageForm({ ...packageForm, code: e.target.value })}
-                                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                                    placeholder="e.g., SCI001"
-                                />
-                            </div>
-                            <div>
-                                <div className="flex items-center justify-between mb-2">
-                                    <label className="block text-sm font-medium text-slate-700">
-                                        Select Subjects
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 mb-1">
+                                        Package Name
                                     </label>
-                                    {subjects.length > 0 && (
-                                        <button
-                                            type="button"
-                                            onClick={handleSelectAll}
-                                            className="text-xs font-medium text-indigo-600 hover:text-indigo-700 transition-colors"
-                                        >
-                                            {areAllFilteredSelected() ? 'Deselect All' : 'Select All'}
-                                        </button>
-                                    )}
+                                    <input
+                                        type="text"
+                                        value={packageForm.name}
+                                        onChange={(e) => setPackageForm({ ...packageForm, name: e.target.value })}
+                                        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                        placeholder="e.g., Science Package"
+                                    />
                                 </div>
-                                {subjects.length > 0 && (
-                                    <div className="relative mb-2">
-                                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                            <SearchIcon />
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 mb-1">
+                                        Package Code
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={packageForm.code}
+                                        onChange={(e) => setPackageForm({ ...packageForm, code: e.target.value })}
+                                        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                        placeholder="e.g., SCI001"
+                                    />
+                                </div>
+                                <div>
+                                    <div className="flex items-center justify-between mb-2">
+                                        <label className="block text-sm font-medium text-slate-700">
+                                            Select Subjects
+                                        </label>
+                                        {subjects.length > 0 && (
+                                            <button
+                                                type="button"
+                                                onClick={handleSelectAll}
+                                                className="text-xs font-medium text-indigo-600 hover:text-indigo-700 transition-colors"
+                                            >
+                                                {areAllFilteredSelected() ? 'Deselect All' : 'Select All'}
+                                            </button>
+                                        )}
+                                    </div>
+                                    {subjects.length > 0 && (
+                                        <div className="relative mb-2">
+                                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                                <SearchIcon />
+                                            </div>
+                                            <input
+                                                type="text"
+                                                value={subjectSearchQuery}
+                                                onChange={(e) => setSubjectSearchQuery(e.target.value)}
+                                                placeholder="Search by name or code..."
+                                                className="w-full pl-9 pr-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                            />
                                         </div>
-                                        <input
-                                            type="text"
-                                            value={subjectSearchQuery}
-                                            onChange={(e) => setSubjectSearchQuery(e.target.value)}
-                                            placeholder="Search by name or code..."
-                                            className="w-full pl-9 pr-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                    )}
+
+                                    <div className="border border-slate-300 rounded-lg max-h-48 overflow-y-auto">
+                                        {subjects.length === 0 ? (
+                                            <div className="px-3 py-4 text-sm text-slate-500 text-center">
+                                                No subjects available. Create subjects first.
+                                            </div>
+                                        ) : filteredSubjects.length === 0 ? (
+                                            <div className="px-3 py-4 text-sm text-slate-500 text-center">
+                                                No subjects match your search.
+                                            </div>
+                                        ) : (
+                                            filteredSubjects.map((subject) => (
+                                                <label
+                                                    key={subject.id}
+                                                    className="flex items-center gap-3 px-3 py-2 hover:bg-slate-50 cursor-pointer border-b border-slate-100 last:border-0"
+                                                >
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={packageForm.subjectIds.includes(subject.id)}
+                                                        onChange={() => toggleSubjectSelection(subject.id)}
+                                                        className="w-4 h-4 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500"
+                                                    />
+                                                    <span className="text-sm text-slate-700 flex-1">
+                                                        {subject.name} <span className="text-slate-500">({subject.code})</span>
+                                                    </span>
+                                                </label>
+                                            ))
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 mb-1">
+                                        Overview
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={packageForm.overview}
+                                        onChange={(e) => setPackageForm({ ...packageForm, overview: e.target.value })}
+                                        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                        placeholder="e.g., OVERVIEW"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 mb-1">
+                                        Syllabus
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={packageForm.syllabus}
+                                        onChange={(e) => setPackageForm({ ...packageForm, syllabus: e.target.value })}
+                                        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                        placeholder="e.g., SYLLABUS"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 mb-1">
+                                        Prerequisites
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={packageForm.prerequisites}
+                                        onChange={(e) => setPackageForm({ ...packageForm, prerequisites: e.target.value })}
+                                        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                        placeholder="e.g., PREREQUISITES"
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Right Column - Image */}
+                            <div className="flex flex-col">
+                                <label className="block text-sm font-medium text-slate-700 mb-3">
+                                    Image
+                                </label>
+
+                                {/* Image Preview */}
+                                {packageForm.image && typeof packageForm.image === 'string' && packageForm.image.startsWith('http') && (
+                                    <div className="mb-4">
+                                        <img 
+                                            src={packageForm.image} 
+                                            alt="Package Preview" 
+                                            className="w-full h-48 object-cover rounded-lg border border-slate-300"
                                         />
                                     </div>
                                 )}
 
-                                <div className="border border-slate-300 rounded-lg max-h-48 overflow-y-auto">
-                                    {subjects.length === 0 ? (
-                                        <div className="px-3 py-4 text-sm text-slate-500 text-center">
-                                            No subjects available. Create subjects first.
-                                        </div>
-                                    ) : filteredSubjects.length === 0 ? (
-                                        <div className="px-3 py-4 text-sm text-slate-500 text-center">
-                                            No subjects match your search.
-                                        </div>
-                                    ) : (
-                                        filteredSubjects.map((subject) => (
-                                            <label
-                                                key={subject.id}
-                                                className="flex items-center gap-3 px-3 py-2 hover:bg-slate-50 cursor-pointer border-b border-slate-100 last:border-0"
-                                            >
-                                                <input
-                                                    type="checkbox"
-                                                    checked={packageForm.subjectIds.includes(subject.id)}
-                                                    onChange={() => toggleSubjectSelection(subject.id)}
-                                                    className="w-4 h-4 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500"
-                                                />
-                                                <span className="text-sm text-slate-700 flex-1">
-                                                    {subject.name} <span className="text-slate-500">({subject.code})</span>
-                                                </span>
-                                            </label>
-                                        ))
-                                    )}
-                                </div>
-                            </div>
+                                {packageForm.image && typeof packageForm.image === 'string' && packageForm.image.startsWith('data:') && (
+                                    <div className="mb-4">
+                                        <img 
+                                            src={packageForm.image} 
+                                            alt="Package Preview" 
+                                            className="w-full h-48 object-cover rounded-lg border border-slate-300"
+                                        />
+                                    </div>
+                                )}
 
-                            <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">
-                                    Image
-                                </label>
-
-                                <div className="relative w-full">
-                                    <input
-                                        type="text"
-                                        name="image"
-                                        placeholder="Enter image URL"
-                                        value={packageForm.imageUrl}
-                                        onChange={(e) =>
-                                            setPackageForm({
-                                                ...packageForm,
-                                                imageUrl: e.target.value,
-                                            })
-                                        }
-                                        className="w-full border border-gray-300 rounded-md px-3 py-1 pr-20 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    />
-
+                                <div>
                                     <label
-                                        htmlFor="imageFile"
-                                        className="absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer rounded-md bg-gray-200 px-3 py-1 text-sm text-gray-700 hover:bg-gray-300"
+                                        htmlFor="packageImageFile"
+                                        className="w-full border-2 border-dashed border-slate-300 rounded-lg px-4 py-8 text-center cursor-pointer hover:bg-slate-50 transition-colors block"
                                     >
-                                        File
+                                        <span className="text-sm text-slate-600">
+                                            Click to upload image
+                                        </span>
                                     </label>
 
                                     <input
                                         type="file"
-                                        id="imageFile"
+                                        id="packageImageFile"
                                         accept="image/*"
                                         className="hidden"
                                         onChange={(e) => {
                                             const file = e.target.files?.[0];
                                             if (file) {
-                                                setPackageForm({
-                                                    ...packageForm,
-                                                    imageUrl: file.name,
-                                                });
+                                                const reader = new FileReader();
+                                                reader.onloadend = () => {
+                                                    setPackageForm({
+                                                        ...packageForm,
+                                                        image: reader.result as string,
+                                                    });
+                                                };
+                                                reader.readAsDataURL(file);
                                             }
                                         }}
                                     />
                                 </div>
                             </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">
-                                    Overview
-                                </label>
-                                <input
-                                    type="text"
-                                    value={packageForm.overview}
-                                    onChange={(e) => setPackageForm({ ...packageForm, overview: e.target.value })}
-                                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                                    placeholder="DESCRIPTION OF SUBJECT"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">
-                                    Syllabus
-                                </label>
-                                <input
-                                    type="text"
-                                    value={packageForm.syllabus}
-                                    onChange={(e) => setPackageForm({ ...packageForm, syllabus: e.target.value })}
-                                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                                    placeholder="e.g., SYLLABUS"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">
-                                    Prerequisites
-                                </label>
-                                <input
-                                    type="text"
-                                    value={packageForm.prerequisites}
-                                    onChange={(e) => setPackageForm({ ...packageForm, prerequisites: e.target.value })}
-                                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                                    placeholder="e.g., PREREQUISITES"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">
-                                    Start Date
-                                </label>
-
-                                <input
-                                    type="date"
-                                    value={packageForm.startDate}
-                                    onChange={(e) =>
-                                        setPackageForm({ ...packageForm, startDate: e.target.value })}
-                                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                                />
-                            </div>
                         </div>
-                        <div className="flex justify-end gap-2 px-6 py-4 border-t border-slate-200">
+                        <div className="flex justify-end gap-2 px-6 py-4 border-t border-slate-200 sticky bottom-0 bg-white">
                             <button
                                 onClick={() => setIsPackageModalOpen(false)}
                                 className="px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"

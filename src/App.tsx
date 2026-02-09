@@ -8,6 +8,7 @@ import Contact from "./pages/Contact";
 import UserRoles from "./pages/UserRoles";
 import Enquiry from "./pages/Enquiry";
 import CandidateDetails from "./pages/CandidateDetails";
+import Batches from "./pages/Batches";
 
 const isAuthenticated = true; // or false
 
@@ -74,6 +75,14 @@ const router = createBrowserRouter([
     element: <ProtectedRoute isAuthenticated={isAuthenticated}>
       <MainContent>
         <UserRoles />
+      </MainContent>
+    </ProtectedRoute>,
+  },
+  {
+    path: "/batches",
+    element: <ProtectedRoute isAuthenticated={isAuthenticated}>
+      <MainContent>
+        <Batches />
       </MainContent>
     </ProtectedRoute>,
   },
