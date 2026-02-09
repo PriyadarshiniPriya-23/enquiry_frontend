@@ -33,6 +33,13 @@ const PlusIcon = () => (
     </svg>
 );
 
+const EyeIcon = () => (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+    </svg>
+);
+
 const EditIcon = () => (
     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -64,6 +71,11 @@ export default function Batches() {
     // Modal states
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingBatch, setEditingBatch] = useState<Batch | null>(null);
+
+    // QR Preview modal
+    const [isQrPreviewOpen, setIsQrPreviewOpen] = useState(false);
+    const [qrPreviewSrc, setQrPreviewSrc] = useState<string | null>(null);
+    const [qrPreviewTitle, setQrPreviewTitle] = useState('');
 
     // Form state
     const [batchForm, setBatchForm] = useState({
@@ -148,6 +160,19 @@ export default function Batches() {
             console.error('Error fetching subjects:', err);
             setSubjects([]);
         }
+    };
+
+    // Show session QR as image
+    const showQrPreview = (batch: Batch) => {
+        const raw = batch.sessionQr || '';
+        if (!raw) return;
+        let src = raw;
+        if (!/^data:/.test(src) && !/^https?:\/\//.test(src)) {
+            src = `data:image/png;base64,${src}`;
+        }
+        setQrPreviewSrc(src);
+        setQrPreviewTitle(batch.name || 'Session QR');
+        setIsQrPreviewOpen(true);
     };
 
     // Open modal for create
@@ -373,6 +398,15 @@ export default function Batches() {
                                         <td className="px-4 py-3 text-sm text-slate-600">{batch.numberOfStudents || 0}</td>
                                         {/* image column removed from UI */}
                                         <td className="px-4 py-3 text-right">
+                                            {batch.sessionQr && (
+                                                <button
+                                                    onClick={() => showQrPreview(batch)}
+                                                    title="Preview Session QR"
+                                                    className="inline-flex items-center gap-1 text-slate-500 hover:text-indigo-600 px-2 py-1 rounded transition-colors"
+                                                >
+                                                    <EyeIcon />
+                                                </button>
+                                            )}
                                             <button
                                                 onClick={() => openModal(batch)}
                                                 className="inline-flex items-center gap-1 text-indigo-600 hover:text-indigo-700 px-2 py-1 rounded transition-colors"
@@ -393,6 +427,43 @@ export default function Batches() {
                     </table>
                 </div>
             </div>
+
+            {/* QR Preview Modal */}
+            {isQrPreviewOpen && qrPreviewSrc && (
+                <div
+                    className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+                    onClick={() => { setIsQrPreviewOpen(false); setQrPreviewSrc(null); }}
+                >
+                    <div
+                        className="bg-white rounded-xl shadow-xl max-w-md w-full p-6"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="flex items-center justify-between mb-4">
+                            <h3 className="text-lg font-semibold text-slate-800">{qrPreviewTitle}</h3>
+                            <button
+                                onClick={() => { setIsQrPreviewOpen(false); setQrPreviewSrc(null); }}
+                                className="text-slate-400 hover:text-slate-600 transition-colors"
+                            >
+                                <CloseIcon />
+                            </button>
+                        </div>
+                        <div className="flex flex-col items-center gap-4">
+                            <img
+                                src={qrPreviewSrc}
+                                alt="Session QR Code"
+                                className="max-w-full max-h-[60vh] rounded-lg border border-slate-200 object-contain"
+                            />
+                            <a
+                                href={qrPreviewSrc}
+                                download={`${qrPreviewTitle.replace(/\s+/g, '_')}_QR.png`}
+                                className="text-sm font-medium text-indigo-600 hover:text-indigo-700 hover:underline"
+                            >
+                                Download QR
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Batch Modal */}
             {isModalOpen && (
