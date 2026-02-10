@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { apiRequest } from '../utils/api';
+import EnrollmentModal from '../components/EnrollmentModal';
 
 // Types
 interface Subject {
@@ -58,6 +59,12 @@ const CloseIcon = () => (
     </svg>
 );
 
+const MoreVerticalIcon = () => (
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+    </svg>
+);
+
 const STATUS_OPTIONS = ['yet to start', 'In progress', 'completed'];
 
 export default function Batches() {
@@ -71,6 +78,10 @@ export default function Batches() {
     // Modal states
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingBatch, setEditingBatch] = useState<Batch | null>(null);
+
+    // Enrollment Modal state
+    const [isEnrollmentModalOpen, setIsEnrollmentModalOpen] = useState(false);
+    const [enrollmentBatchId, setEnrollmentBatchId] = useState<number | null>(null);
 
     // QR Preview modal
     const [isQrPreviewOpen, setIsQrPreviewOpen] = useState(false);
@@ -128,7 +139,7 @@ export default function Batches() {
                 method: 'GET',
             });
             console.log('Batches response:', data);
-            
+
             if (Array.isArray(data)) {
                 console.log(`Successfully fetched ${data.length} batches`);
                 setBatches(data);
@@ -217,10 +228,10 @@ export default function Batches() {
     // Save batch
     const saveBatch = async () => {
         // Validate required fields
-       if (!batchForm.name || !batchForm.code || !batchForm.sessionDate || !batchForm.sessionTime) {
-    setError('Batch Name, Code, Session Date, and Session Time are required');
-    return;
-}
+        if (!batchForm.name || !batchForm.code || !batchForm.sessionDate || !batchForm.sessionTime) {
+            setError('Batch Name, Code, Session Date, and Session Time are required');
+            return;
+        }
 
         setFormLoading(true);
         setError(null);
@@ -282,6 +293,7 @@ export default function Batches() {
                 numberOfStudents: 0,
                 subjectId: null,
                 image: '',
+                instructorId: 0
             });
         } catch (err) {
             setError(err instanceof Error ? err.message : 'An error occurred');
@@ -387,11 +399,10 @@ export default function Batches() {
                                         <td className="px-4 py-3 text-sm text-slate-600">{getSubjectName(batch.subjectId)}</td>
                                         <td className="px-4 py-3 text-sm text-slate-600">{getInstructorName(batch.instructorId, batch)}</td>
                                         <td className="px-4 py-3 text-sm">
-                                            <span className={`px-2 py-1 rounded text-xs font-medium ${
-                                                batch.status === 'completed' ? 'bg-green-100 text-green-700' :
+                                            <span className={`px-2 py-1 rounded text-xs font-medium ${batch.status === 'completed' ? 'bg-green-100 text-green-700' :
                                                 batch.status === 'In progress' ? 'bg-blue-100 text-blue-700' :
-                                                'bg-yellow-100 text-yellow-700'
-                                            }`}>
+                                                    'bg-yellow-100 text-yellow-700'
+                                                }`}>
                                                 {batch.status}
                                             </span>
                                         </td>
@@ -407,6 +418,16 @@ export default function Batches() {
                                                     <EyeIcon />
                                                 </button>
                                             )}
+                                            <button
+                                                onClick={() => {
+                                                    setEnrollmentBatchId(batch.id);
+                                                    setIsEnrollmentModalOpen(true);
+                                                }}
+                                                title="Enrollments"
+                                                className="inline-flex items-center gap-1 text-slate-500 hover:text-indigo-600 px-2 py-1 rounded transition-colors"
+                                            >
+                                                <MoreVerticalIcon />
+                                            </button>
                                             <button
                                                 onClick={() => openModal(batch)}
                                                 className="inline-flex items-center gap-1 text-indigo-600 hover:text-indigo-700 px-2 py-1 rounded transition-colors"
@@ -428,7 +449,6 @@ export default function Batches() {
                 </div>
             </div>
 
-            {/* QR Preview Modal */}
             {isQrPreviewOpen && qrPreviewSrc && (
                 <div
                     className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4"
@@ -464,6 +484,13 @@ export default function Batches() {
                     </div>
                 </div>
             )}
+
+            <EnrollmentModal
+                isOpen={isEnrollmentModalOpen}
+                onClose={() => setIsEnrollmentModalOpen(false)}
+                batchId={enrollmentBatchId}
+                batchName={editingBatch?.name}
+            />
 
             {/* Batch Modal */}
             {isModalOpen && (
@@ -533,8 +560,8 @@ export default function Batches() {
 
                                 <div>
                                     <label className="block text-sm font-medium text-slate-700 mb-1">
-    Subject
-</label>
+                                        Subject
+                                    </label>
                                     <select
                                         value={batchForm.subjectId || ''}
                                         onChange={(e) => setBatchForm({ ...batchForm, subjectId: parseInt(e.target.value) || null })}
