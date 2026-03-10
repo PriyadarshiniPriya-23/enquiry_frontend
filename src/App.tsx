@@ -8,7 +8,8 @@ import Contact from "./pages/Contact";
 import UserRoles from "./pages/UserRoles";
 import Enquiry from "./pages/Enquiry";
 import CandidateDetails from "./pages/CandidateDetails";
-import Batches from "./pages/Batches";
+import Batches from "./pages/batches";
+import Jobs from "./pages/Jobs";
 
 const isAuthenticated = true; // or false
 
@@ -83,6 +84,14 @@ const router = createBrowserRouter([
     element: <ProtectedRoute isAuthenticated={isAuthenticated}>
       <MainContent>
         <Batches />
+      </MainContent>
+    </ProtectedRoute>,
+  },
+  {
+    path: "/jobs",
+    element: <ProtectedRoute isAuthenticated={isAuthenticated}>
+      <MainContent>
+        <Jobs />
       </MainContent>
     </ProtectedRoute>,
   },
