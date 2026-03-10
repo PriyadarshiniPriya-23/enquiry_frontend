@@ -291,7 +291,7 @@ export default function MainContent({ children }: { children: React.ReactNode })
                             </div>
                         </div>
                     </div>
-                </header>Logged by
+                </header>
 
                 {/* Scrollable Content Area */}
                 <div className="p-4 lg:p-8 overflow-y-auto">
