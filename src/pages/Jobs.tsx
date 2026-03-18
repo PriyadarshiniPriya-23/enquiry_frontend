@@ -16,6 +16,7 @@ interface JobPost {
     about: string;
     jobDescription: string;
     preferredExperience: string;
+    technicalSkills: string[];
     postedAt?: string;
     createdAt?: string;
     updatedAt?: string;
@@ -67,7 +68,7 @@ const LockIcon = () => (
     </svg>
 );
 
-const ALLOWED_ROLES = ['HR', 'COUNSELLOR','ADMIN'];
+const ALLOWED_ROLES = ['HR', 'COUNSELLOR', 'ADMIN'];
 
 // ─── Badge helper ─────────────────────────────────────────────────────────────
 
@@ -90,6 +91,22 @@ function jobTypeBadge(type: JobType) {
     return map[type];
 }
 
+// ─── Skill Suggestions ───────────────────────────────────────────────────────
+const SKILL_SUGGESTIONS = [
+    'JavaScript', 'TypeScript', 'Python', 'Java', 'C', 'C++', 'C#', 'Go', 'Rust', 'Swift', 'Kotlin', 'Ruby', 'PHP', 'R', 'MATLAB', 'Scala', 'Dart', 'Elixir',
+    'React', 'Next.js', 'Vue.js', 'Angular', 'Svelte', 'Nuxt.js', 'Remix',
+    'Node.js', 'Express.js', 'NestJS', 'FastAPI', 'Django', 'Flask', 'Spring Boot', 'ASP.NET', 'Laravel', 'Ruby on Rails',
+    'HTML', 'CSS', 'Tailwind CSS', 'Bootstrap', 'SASS/SCSS', 'GraphQL', 'REST API',
+    'PostgreSQL', 'MySQL', 'MongoDB', 'Redis', 'SQLite', 'Cassandra', 'DynamoDB', 'Elasticsearch', 'Firebase',
+    'AWS', 'Azure', 'GCP', 'Docker', 'Kubernetes', 'Terraform', 'CI/CD', 'Jenkins', 'GitHub Actions',
+    'Git', 'Linux', 'Bash', 'Nginx', 'Apache',
+    'TensorFlow', 'PyTorch', 'scikit-learn', 'Pandas', 'NumPy', 'Keras', 'OpenCV', 'Hugging Face', 'LangChain', 'AI/ML',
+     'React Native', 'Flutter', 'Android', 'iOS', 'Ionic',
+    'Figma', 'Adobe XD', 'Photoshop', 'Illustrator',
+    'Agile', 'Scrum', 'Jira', 'Confluence', 'Notion',
+    'TCP/IP', 'OAuth', 'JWT', 'WebSockets', 'gRPC', 'Kafka', 'RabbitMQ',
+];
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function Jobs() {
@@ -104,6 +121,8 @@ export default function Jobs() {
     const [editingId, setEditingId] = useState<number | null>(null);
     const [logoPreview, setLogoPreview] = useState<string>('');
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const skillWrapperRef = useRef<HTMLDivElement>(null);
+    const skillInputRef = useRef<HTMLInputElement>(null);
 
     const [form, setForm] = useState({
         companyName: '',
@@ -115,7 +134,67 @@ export default function Jobs() {
         about: '',
         jobDescription: '',
         preferredExperience: '',
+        technicalSkills: [] as string[],
     });
+
+    const [skillInput, setSkillInput] = useState('');
+    const [skillDropdownOpen, setSkillDropdownOpen] = useState(false);
+    const [skillActiveIdx, setSkillActiveIdx] = useState(-1);
+
+    const filteredSkills = skillInput.trim().length > 0
+        ? SKILL_SUGGESTIONS.filter(
+            s => s.toLowerCase().includes(skillInput.toLowerCase()) && !form.technicalSkills.includes(s)
+        ).slice(0, 8)
+        : [];
+
+    const addSkill = (raw: string) => {
+        const skill = raw.trim();
+        if (skill && !form.technicalSkills.includes(skill)) {
+            setForm(prev => ({ ...prev, technicalSkills: [...prev.technicalSkills, skill] }));
+        }
+        setSkillInput('');
+        setSkillDropdownOpen(false);
+        setSkillActiveIdx(-1);
+        skillInputRef.current?.focus();
+    };
+
+    const removeSkill = (skill: string) => {
+        setForm(prev => ({ ...prev, technicalSkills: prev.technicalSkills.filter(s => s !== skill) }));
+    };
+
+    const handleSkillKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            setSkillActiveIdx(i => Math.min(i + 1, filteredSkills.length - 1));
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            setSkillActiveIdx(i => Math.max(i - 1, -1));
+        } else if (e.key === 'Enter' || e.key === ',') {
+            e.preventDefault();
+            if (skillActiveIdx >= 0 && filteredSkills[skillActiveIdx]) {
+                addSkill(filteredSkills[skillActiveIdx]);
+            } else {
+                addSkill(skillInput);
+            }
+        } else if (e.key === 'Escape') {
+            setSkillDropdownOpen(false);
+            setSkillActiveIdx(-1);
+        } else if (e.key === 'Backspace' && skillInput === '' && form.technicalSkills.length > 0) {
+            removeSkill(form.technicalSkills[form.technicalSkills.length - 1]);
+        }
+    };
+
+    // Close dropdown on outside click
+    useEffect(() => {
+        const handler = (e: MouseEvent) => {
+            if (skillWrapperRef.current && !skillWrapperRef.current.contains(e.target as Node)) {
+                setSkillDropdownOpen(false);
+                setSkillActiveIdx(-1);
+            }
+        };
+        document.addEventListener('mousedown', handler);
+        return () => document.removeEventListener('mousedown', handler);
+    }, []);
 
     useEffect(() => {
         if (isAllowed) {
@@ -183,7 +262,9 @@ export default function Jobs() {
             about: job.about,
             jobDescription: job.jobDescription,
             preferredExperience: job.preferredExperience,
+            technicalSkills: job.technicalSkills || [],
         });
+        setSkillInput('');
         setLogoPreview(job.companyLogo);
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
@@ -200,7 +281,9 @@ export default function Jobs() {
             about: '',
             jobDescription: '',
             preferredExperience: '',
+            technicalSkills: [],
         });
+        setSkillInput('');
         setLogoPreview('');
         if (fileInputRef.current) fileInputRef.current.value = '';
     };
@@ -249,7 +332,9 @@ export default function Jobs() {
                         about: '',
                         jobDescription: '',
                         preferredExperience: '',
+                        technicalSkills: [],
                     });
+                    setSkillInput('');
                     setLogoPreview('');
                     if (fileInputRef.current) fileInputRef.current.value = '';
                     setSuccess(true);
@@ -499,6 +584,74 @@ export default function Jobs() {
                         {errors.preferredExperience && <p className="text-xs text-rose-500 mt-1">{errors.preferredExperience}</p>}
                     </div>
 
+                    {/* Technical Skills */}
+                    <div ref={skillWrapperRef} className="relative">
+                        <label className="block text-sm font-medium text-slate-700 mb-1">Technical Skills</label>
+                        {/* Tag box */}
+                        <div
+                            className="flex flex-wrap gap-2 rounded-lg border px-3 py-2 min-h-[44px] focus-within:ring-2 focus-within:ring-indigo-500 focus-within:border-indigo-500 border-slate-300 bg-white cursor-text"
+                            onClick={() => skillInputRef.current?.focus()}
+                        >
+                            {form.technicalSkills.map(skill => (
+                                <span
+                                    key={skill}
+                                    className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-indigo-100 text-indigo-700 text-xs font-medium"
+                                >
+                                    {skill}
+                                    <button
+                                        type="button"
+                                        onClick={e => { e.stopPropagation(); removeSkill(skill); }}
+                                        className="ml-0.5 hover:text-indigo-900 focus:outline-none"
+                                        aria-label={`Remove ${skill}`}
+                                    >
+                                        ×
+                                    </button>
+                                </span>
+                            ))}
+                            <input
+                                ref={skillInputRef}
+                                type="text"
+                                value={skillInput}
+                                onChange={e => {
+                                    setSkillInput(e.target.value);
+                                    setSkillDropdownOpen(true);
+                                    setSkillActiveIdx(-1);
+                                }}
+                                onFocus={() => skillInput.trim() && setSkillDropdownOpen(true)}
+                                onKeyDown={handleSkillKeyDown}
+                                placeholder={form.technicalSkills.length === 0 ? 'Type a skill… (e.g. React, Python)' : ''}
+                                className="flex-1 min-w-[160px] text-sm outline-none bg-transparent placeholder:text-slate-400 py-0.5"
+                                autoComplete="off"
+                            />
+                        </div>
+
+                        {/* Autocomplete Dropdown */}
+                        {skillDropdownOpen && filteredSkills.length > 0 && (
+                            <ul className="absolute z-50 left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden">
+                                {filteredSkills.map((skill, idx) => (
+                                    <li
+                                        key={skill}
+                                        onMouseDown={e => { e.preventDefault(); addSkill(skill); }}
+                                        onMouseEnter={() => setSkillActiveIdx(idx)}
+                                        className={`flex items-center gap-2 px-4 py-2.5 text-sm cursor-pointer transition-colors ${idx === skillActiveIdx
+                                                ? 'bg-indigo-50 text-indigo-700'
+                                                : 'text-slate-700 hover:bg-slate-50'
+                                            }`}
+                                    >
+                                        <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 flex-shrink-0" />
+                                        {/* Bold the matching part */}
+                                        {skill.split(new RegExp(`(${skillInput})`, 'gi')).map((part, i) =>
+                                            part.toLowerCase() === skillInput.toLowerCase()
+                                                ? <strong key={i} className="font-semibold">{part}</strong>
+                                                : <span key={i}>{part}</span>
+                                        )}
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
+                        <p className="text-xs text-slate-400 mt-1">Type to search skills — press Enter or comma to add a custom one</p>
+                    </div>
+
                     {/* Submit */}
                     <div className="flex justify-end items-center gap-3 pt-2">
                         {editingId && (
@@ -553,24 +706,36 @@ export default function Jobs() {
                                         )}
                                     </div>
                                     <div className="min-w-0">
-                                    <p className="text-xs font-semibold text-indigo-600 uppercase tracking-wide flex items-center gap-1">
-                                        {job.companyName}
-                                    </p>
-                                    <h4 className="text-lg font-bold text-slate-800 mt-0.5">{job.jobTitle}</h4>
-                                    <div className="flex flex-wrap items-center gap-3 mt-2 text-xs text-slate-500">
-                                        <span className="flex items-center gap-1">
-                                            <MapPinIcon /> {job.location}
-                                        </span>
-                                        <span className={`px-2 py-0.5 rounded-full font-medium ${workModeBadge(job.workMode)}`}>
-                                            {job.workMode}
-                                        </span>
-                                        <span className={`px-2 py-0.5 rounded-full font-medium ${jobTypeBadge(job.jobType)}`}>
-                                            {job.jobType}
-                                        </span>
-                                        <span className="text-slate-400">
-                                            Posted: {job.postedAt || (job.createdAt ? new Date(job.createdAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }) : 'Just now')}
-                                        </span>
-                                    </div>
+                                        <p className="text-xs font-semibold text-indigo-600 uppercase tracking-wide flex items-center gap-1">
+                                            {job.companyName}
+                                        </p>
+                                        <h4 className="text-lg font-bold text-slate-800 mt-0.5">{job.jobTitle}</h4>
+                                        <div className="flex flex-wrap items-center gap-3 mt-2 text-xs text-slate-500">
+                                            <span className="flex items-center gap-1">
+                                                <MapPinIcon /> {job.location}
+                                            </span>
+                                            <span className={`px-2 py-0.5 rounded-full font-medium ${workModeBadge(job.workMode)}`}>
+                                                {job.workMode}
+                                            </span>
+                                            <span className={`px-2 py-0.5 rounded-full font-medium ${jobTypeBadge(job.jobType)}`}>
+                                                {job.jobType}
+                                            </span>
+                                            <span className="text-slate-400">
+                                                Posted: {job.postedAt || (job.createdAt ? new Date(job.createdAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }) : 'Just now')}
+                                            </span>
+                                        </div>
+                                        {job.technicalSkills && job.technicalSkills.length > 0 && (
+                                            <div className="flex flex-wrap gap-1.5 mt-2">
+                                                {job.technicalSkills.map(skill => (
+                                                    <span
+                                                        key={skill}
+                                                        className="px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600 border border-indigo-200 text-xs font-medium"
+                                                    >
+                                                        {skill}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-1.5 flex-shrink-0">
@@ -611,6 +776,21 @@ export default function Jobs() {
                                     <p className="font-semibold text-slate-800 mb-1">Preferred Technical &amp; Professional Experience</p>
                                     <pre className="whitespace-pre-wrap font-sans text-slate-600 leading-relaxed">{job.preferredExperience}</pre>
                                 </div>
+                                {job.technicalSkills && job.technicalSkills.length > 0 && (
+                                    <div>
+                                        <p className="font-semibold text-slate-800 mb-2">Technical Skills</p>
+                                        <div className="flex flex-wrap gap-2">
+                                            {job.technicalSkills.map(skill => (
+                                                <span
+                                                    key={skill}
+                                                    className="px-2.5 py-0.5 rounded-full bg-indigo-100 text-indigo-700 text-xs font-medium"
+                                                >
+                                                    {skill}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     ))}
