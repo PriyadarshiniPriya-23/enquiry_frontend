@@ -38,3 +38,30 @@ export interface BillingDetails {
     paid: number;
     discount: number;
 }
+
+export interface JobPost {
+    id: number;
+    jobTitle: string;
+    companyName: string;
+    location: string;
+}
+
+export interface EnquiryBasic {
+    id: number;
+    name: string;
+    email: string;
+    phone: string;
+}
+
+export interface PlacementApplication {
+    id: number;
+    jobPostId: number;
+    enquiryId: number;
+    userPlacementDetailId: number;
+    appliedStatus: boolean;
+    job_status: string; // 'applied', 'in-progress', 'selected', 'rejected' etc.
+    createdAt: string;
+    updatedAt: string;
+    jobPost: JobPost;
+    enquiry: EnquiryBasic;
+}

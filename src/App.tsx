@@ -10,6 +10,7 @@ import Enquiry from "./pages/Enquiry";
 import CandidateDetails from "./pages/CandidateDetails";
 import Batches from "./pages/batches";
 import Jobs from "./pages/Jobs";
+import StudentPlacementList from "./pages/StudentPlacementList";
 
 const isAuthenticated = true; // or false
 
@@ -87,11 +88,19 @@ const router = createBrowserRouter([
       </MainContent>
     </ProtectedRoute>,
   },
-  {
+    {
     path: "/jobs",
     element: <ProtectedRoute isAuthenticated={isAuthenticated}>
       <MainContent>
         <Jobs />
+      </MainContent>
+    </ProtectedRoute>,
+  },
+  {
+    path: "/student-placements",
+    element: <ProtectedRoute isAuthenticated={isAuthenticated}>
+      <MainContent>
+        <StudentPlacementList />
       </MainContent>
     </ProtectedRoute>,
   },

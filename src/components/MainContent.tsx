@@ -75,6 +75,15 @@ const CalendarIcon = () => (
 const JobsIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5"><rect x="2" y="7" width="20" height="14" rx="2" /><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" /><line x1="12" y1="12" x2="12" y2="12.01" /><path d="M2 12h20" /></svg>
 )
+
+const PlacementIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+        <circle cx="9" cy="7" r="4" />
+        <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+    </svg>
+);
 interface NavItemProps {
     icon: React.ReactNode;
     label: string;
@@ -128,7 +137,10 @@ export default function MainContent({ children }: { children: React.ReactNode })
         { icon: <UserRolesIcon />, label: 'User and Roles', path: '/user-roles' },
         { icon: <CalendarIcon />, label: 'Batches', path: '/batches' },
         ...(jobsAllowedRoles.includes(fullRoleName)
-            ? [{ icon: <JobsIcon />, label: 'Jobs', path: '/jobs' }]
+            ? [
+                { icon: <JobsIcon />, label: 'Jobs', path: '/jobs' },
+                { icon: <PlacementIcon />, label: 'Student Placement List', path: '/student-placements' }
+            ]
             : []),
     ];
 
@@ -165,6 +177,9 @@ export default function MainContent({ children }: { children: React.ReactNode })
         }
         if (activeItem?.label == 'Jobs') {
             return 'Post job listings for students — accessible to HR Admin and Counsellor only';
+        }
+        if (activeItem?.label == 'Student Placement List') {
+            return 'View and manage all student job applications';
         }
         return 'Enquiry Forms Portal';
     }
