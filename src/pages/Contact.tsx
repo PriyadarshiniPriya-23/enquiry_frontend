@@ -136,7 +136,7 @@ export default function Contact() {
 
         // Case 3: If package cost > 0 and balance is 0 → green background (fully paid)
         if (packageCost > 0 && balance === 0) {
-            return 'bg-green-300';
+            return 'bg-green-200';
         }
 
         // Case 2: If package cost > 0 and balance > 0 → yellow background (partial/no payment)
@@ -217,7 +217,7 @@ export default function Contact() {
                         <span className="text-sm text-slate-700">Pending Payment</span>
                     </div>
                     <div className="flex items-center gap-2">
-                        <div className="w-4 h-4 bg-green-300 rounded"></div>
+                        <div className="w-4 h-4 bg-emerald-300 rounded"></div>
                         <span className="text-sm text-slate-700">Fully Paid</span>
                     </div>
                 </div>
@@ -245,19 +245,19 @@ export default function Contact() {
                     <table className="w-full text-left border-collapse table-fixed">
                         <thead className="bg-slate-50 border-b border-slate-200">
                             <tr>
-                                <th className="px-3 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider w-[16%]">Candidate</th>
-                                <th className="px-3 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider w-[10%]">Status</th>
-                                <th className="px-3 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider w-[18%]">Contact</th>
-                                <th className="px-3 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider w-[14%]">Package Info</th>
-                                <th className="px-3 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider w-[13%]">Training Prefs</th>
-                                <th className="px-3 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider w-[13%]">Profession</th>
-                                <th className="px-3 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider w-[8%]">Date</th>
+                                <th className="px-3 py-4 text-xs font-semibold text-black uppercase tracking-wider w-[16%]">Candidate</th>
+                                <th className="px-3 py-4 text-xs font-semibold text-black uppercase tracking-wider w-[10%]">Status</th>
+                                <th className="px-3 py-4 text-xs font-semibold text-black uppercase tracking-wider w-[18%]">Contact</th>
+                                <th className="px-3 py-4 text-xs font-semibold text-black uppercase tracking-wider w-[14%]">Package Info</th>
+                                <th className="px-3 py-4 text-xs font-semibold text-black uppercase tracking-wider w-[13%]">Training Prefs</th>
+                                <th className="px-3 py-4 text-xs font-semibold text-black uppercase tracking-wider w-[13%]">Profession</th>
+                                <th className="px-3 py-4 text-xs font-semibold text-black uppercase tracking-wider w-[8%]">Date</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-200">
                             {filteredEnquiries.length === 0 ? (
                                 <tr>
-                                    <td colSpan={7} className="px-6 py-12 text-center text-slate-500 text-sm">
+                                    <td colSpan={7} className="px-6 py-12 text-center text-black text-sm">
                                         No enquiries found matching your filters.
                                     </td>
                                 </tr>
@@ -270,7 +270,7 @@ export default function Contact() {
                                     >
                                         <td className="px-3 py-4">
                                             <div className="text-sm font-medium text-indigo-600 hover:text-indigo-800 break-words">{enquiry.name}</div>
-                                            <div className="text-xs text-slate-500 mt-0.5 break-words">{enquiry.current_location}</div>
+                                            <div className="text-xs text-black mt-0.5 break-words">{enquiry.current_location}</div>
                                             {enquiry.consent && (
                                                 <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-green-100 text-green-800 mt-1">
                                                     Consent
@@ -278,41 +278,41 @@ export default function Contact() {
                                             )}
                                         </td>
                                         <td className="px-3 py-4">
-                                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 break-words whitespace-normal">
+                                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-black break-words whitespace-normal">
                                                 {enquiry.candidateStatus}
                                             </span>
                                             <div className="text-xs text-slate-400 mt-1.5 break-all">Ref: {enquiry.referral}</div>
                                         </td>
                                         <td className="px-3 py-4">
                                             <div className="text-xs text-slate-900 flex items-start gap-1.5 break-all">
-                                                <svg className="w-3 h-3 text-slate-400 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+                                                <svg className="w-3 h-3 text-black mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
                                                 <span>{enquiry.email}</span>
                                             </div>
-                                            <div className="text-xs text-slate-500 mt-1 flex items-center gap-1.5">
-                                                <svg className="w-3 h-3 text-slate-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
+                                            <div className="text-xs text-black mt-1 flex items-center gap-1.5">
+                                                <svg className="w-3 h-3 text-black flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
                                                 {enquiry.phone}
                                             </div>
                                         </td>
                                         <td className="px-3 py-4">
-                                            <div className="text-xs font-medium text-indigo-600 break-words">
+                                            <div className="text-xs font-medium text-black break-words">
                                                 {getPackageName(enquiry.packageId)}
                                             </div>
-                                            <div className="text-xs text-slate-500 mt-1 line-clamp-2" title={getSubjectNames(enquiry.subjectIds)}>
+                                            <div className="text-xs text-black mt-1 line-clamp-2" title={getSubjectNames(enquiry.subjectIds)}>
                                                 {getSubjectNames(enquiry.subjectIds)}
                                             </div>
                                         </td>
                                         <td className="px-3 py-4">
-                                            <div className="text-xs text-slate-900 break-words">{enquiry.trainingMode}</div>
-                                            <div className="text-xs text-slate-500">{enquiry.trainingTime}</div>
-                                            <div className="text-xs text-slate-400 mt-0.5">Start: {enquiry.startTime}</div>
+                                            <div className="text-xs text-black break-words">{enquiry.trainingMode}</div>
+                                            <div className="text-xs text-black">{enquiry.trainingTime}</div>
+                                            <div className="text-xs text-black mt-0.5">Start: {enquiry.startTime}</div>
                                         </td>
                                         <td className="px-3 py-4">
                                             <div className="text-xs text-slate-900 break-words">{enquiry.profession}</div>
-                                            <div className="text-xs text-slate-500 break-words">{enquiry.qualification}</div>
+                                            <div className="text-xs text-black break-words">{enquiry.qualification}</div>
                                             <div className="text-xs text-slate-400 mt-0.5">{enquiry.experience}</div>
                                         </td>
                                         <td className="px-3 py-4">
-                                            <div className="text-xs text-slate-500">
+                                            <div className="text-xs text-black">
                                                 {new Date(enquiry.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                                                 <br />
                                                 {new Date(enquiry.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
