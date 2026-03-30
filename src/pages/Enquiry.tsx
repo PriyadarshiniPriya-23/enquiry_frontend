@@ -477,7 +477,7 @@ export default function Enquiry() {
 
                 {/* 4. Professional Background */}
                 <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-                    <h2 className="text-lg font-semibold text-slate-800 mb-4">Professional Background</h2>
+                    <h2 className="text-lg font-semibold text-slate-800 mb-4">Profession</h2>
 
                     <div className="space-y-6">
                         <div>

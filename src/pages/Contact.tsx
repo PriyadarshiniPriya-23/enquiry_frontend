@@ -12,7 +12,7 @@ export default function Contact() {
 
     // Filter and Pagination State
     const [searchTerm, setSearchTerm] = useState('');
-    const [statusFilter, setStatusFilter] = useState('all');
+    const [statusFilter, setStatusFilter] = useState<string | null>(null);
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
 
@@ -20,6 +20,11 @@ export default function Contact() {
 
     useEffect(() => {
         fetchAllData();
+        // Restore statusFilter from sessionStorage
+        const savedStatusFilter = sessionStorage.getItem('contactPageStatusFilter');
+        if (savedStatusFilter) {
+            setStatusFilter(savedStatusFilter);
+        }
     }, []);
 
     const fetchAllData = async () => {
@@ -42,11 +47,29 @@ export default function Contact() {
         }
     };
 
-    // Get unique statuses for dropdown
+    // Get unique statuses in specific order
     const uniqueStatuses = useMemo(() => {
         const statuses = enquiries.map(e => e.candidateStatus).filter(Boolean);
-        return Array.from(new Set(statuses)).sort();
+        const uniqueSet = Array.from(new Set(statuses));
+        const statusOrder = ['enquiry stage', 'demo', 'qualified demo', 'class', 'class qualified'];
+        const ordered = statusOrder.filter(s => uniqueSet.includes(s));
+        const remaining = uniqueSet.filter(s => !statusOrder.includes(s)).sort();
+        return [...ordered, ...remaining];
     }, [enquiries]);
+
+    // Set initial status filter to first status
+    useEffect(() => {
+        if (statusFilter === null && uniqueStatuses.length > 0) {
+            setStatusFilter(uniqueStatuses[0]);
+        }
+    }, [uniqueStatuses, statusFilter]);
+
+    // Save statusFilter to sessionStorage whenever it changes
+    useEffect(() => {
+        if (statusFilter) {
+            sessionStorage.setItem('contactPageStatusFilter', statusFilter);
+        }
+    }, [statusFilter]);
 
     // Apply filters
     const filteredEnquiries = useMemo(() => {
@@ -63,7 +86,7 @@ export default function Contact() {
         }
 
         // Status filter
-        if (statusFilter !== 'all') {
+        if (statusFilter) {
             filtered = filtered.filter(enquiry => enquiry.candidateStatus === statusFilter);
         }
 
@@ -100,6 +123,30 @@ export default function Contact() {
         navigate(`/contact-details/${enquiry.id}`, { state: { enquiry } });
     };
 
+    const getBillingBackgroundColor = (enquiry: Enquiry): string => {
+        if (!enquiry.billing) return '';
+
+        const packageCost = parseFloat(enquiry.billing.packageCost);
+        const balance = parseFloat(enquiry.billing.balance);
+
+        // Case 1: If package cost is 0 → orange background
+        if (packageCost === 0) {
+            return 'bg-orange-200';
+        }
+
+        // Case 3: If package cost > 0 and balance is 0 → green background (fully paid)
+        if (packageCost > 0 && balance === 0) {
+            return 'bg-green-300';
+        }
+
+        // Case 2: If package cost > 0 and balance > 0 → yellow background (partial/no payment)
+        if (packageCost > 0 && balance > 0) {
+            return 'bg-yellow-200';
+        }
+
+        return '';
+    };
+
     if (loading) {
         return (
             <div className="flex items-center justify-center h-64">
@@ -118,7 +165,7 @@ export default function Contact() {
 
     return (
         <div className="space-y-4">
-            {/* Filters Section */}
+            {/* Search Section */}
             <div className="bg-white px-6 py-4 rounded-xl border border-slate-200 shadow-sm">
                 <div className="flex flex-col md:flex-row gap-4">
                     {/* Search Input */}
@@ -133,7 +180,7 @@ export default function Contact() {
                                 type="text"
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
-                                placeholder="Search by name, phone, or email..."
+                                placeholder={`Search ${statusFilter} list by name, phone, or email...`}
                                 className="w-full pl-10 pr-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
                             />
                             {searchTerm && (
@@ -149,27 +196,6 @@ export default function Contact() {
                         </div>
                     </div>
 
-                    {/* Status Dropdown */}
-                    <div className="w-full md:w-64">
-                        <div className="relative">
-                            <select
-                                value={statusFilter}
-                                onChange={(e) => setStatusFilter(e.target.value)}
-                                className="w-full px-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent appearance-none cursor-pointer"
-                            >
-                                <option value="all">All Statuses</option>
-                                {uniqueStatuses.map(status => (
-                                    <option key={status} value={status}>{status}</option>
-                                ))}
-                            </select>
-                            <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                                <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                </svg>
-                            </div>
-                        </div>
-                    </div>
-
                     {/* Results Count */}
                     <div className="flex items-center">
                         <div className="bg-indigo-50 text-indigo-700 px-4 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap">
@@ -179,8 +205,42 @@ export default function Contact() {
                 </div>
             </div>
 
-            {/* Table */}
+            {/* Billing Legend */}
+            <div className="bg-white px-6 py-4 rounded-xl border border-slate-200 shadow-sm">
+                <div className="flex flex-wrap gap-6">
+                    <div className="flex items-center gap-2">
+                        <div className="w-4 h-4 bg-orange-200 rounded"></div>
+                        <span className="text-sm text-slate-700">Package amount 0</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <div className="w-4 h-4 bg-yellow-300 rounded"></div>
+                        <span className="text-sm text-slate-700">Pending Payment</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <div className="w-4 h-4 bg-green-300 rounded"></div>
+                        <span className="text-sm text-slate-700">Fully Paid</span>
+                    </div>
+                </div>
+            </div>
+
+            {/* Status Tabs */}
             <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <div className="flex gap-0 border-b border-slate-200 overflow-x-auto">
+                    {uniqueStatuses.map(status => (
+                        <button
+                            key={status}
+                            onClick={() => setStatusFilter(status)}
+                            className={`px-6 py-3.5 text-sm font-medium whitespace-nowrap transition-all border-b-2 ${
+                                statusFilter === status
+                                    ? 'border-indigo-600 text-indigo-600 bg-white'
+                                    : 'border-transparent text-slate-600 bg-slate-50 hover:text-slate-900 hover:bg-white'
+                            }`}
+                        >
+                            {status}
+                        </button>
+                    ))}
+                </div>
+
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse table-fixed">
                         <thead className="bg-slate-50 border-b border-slate-200">
@@ -190,7 +250,7 @@ export default function Contact() {
                                 <th className="px-3 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider w-[18%]">Contact</th>
                                 <th className="px-3 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider w-[14%]">Package Info</th>
                                 <th className="px-3 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider w-[13%]">Training Prefs</th>
-                                <th className="px-3 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider w-[13%]">Professional</th>
+                                <th className="px-3 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider w-[13%]">Profession</th>
                                 <th className="px-3 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider w-[8%]">Date</th>
                             </tr>
                         </thead>
@@ -198,16 +258,14 @@ export default function Contact() {
                             {filteredEnquiries.length === 0 ? (
                                 <tr>
                                     <td colSpan={7} className="px-6 py-12 text-center text-slate-500 text-sm">
-                                        {searchTerm || statusFilter !== 'all'
-                                            ? 'No enquiries found matching your filters.'
-                                            : 'No enquiries found.'}
+                                        No enquiries found matching your filters.
                                     </td>
                                 </tr>
                             ) : (
                                 paginatedEnquiries.map((enquiry) => (
                                     <tr
                                         key={enquiry.id}
-                                        className="hover:bg-slate-50 transition-colors cursor-pointer"
+                                        className={`hover:opacity-80 transition-all cursor-pointer ${getBillingBackgroundColor(enquiry)}`}
                                         onClick={() => handleCandidateClick(enquiry)}
                                     >
                                         <td className="px-3 py-4">

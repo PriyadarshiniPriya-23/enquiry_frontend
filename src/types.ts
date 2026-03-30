@@ -29,6 +29,7 @@ export interface Enquiry {
     consent: boolean;
     candidateStatus: string; // The "Deal Stage"
     demoStatus?: string; // New field requested
+    billing?: Billing;
     createdAt: string;
     updatedAt: string;
 }
@@ -37,6 +38,14 @@ export interface BillingDetails {
     total: number;
     paid: number;
     discount: number;
+}
+
+export interface Billing {
+    id: number;
+    packageCost: string;
+    amountPaid: string;
+    discount: string;
+    balance: string;
 }
 
 export interface JobPost {
