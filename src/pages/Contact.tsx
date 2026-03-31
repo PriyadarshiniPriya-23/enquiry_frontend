@@ -269,8 +269,8 @@ export default function Contact() {
                                         onClick={() => handleCandidateClick(enquiry)}
                                     >
                                         <td className="px-3 py-4">
-                                            <div className="text-sm font-medium text-indigo-600 hover:text-indigo-800 break-words">{enquiry.name}</div>
-                                            <div className="text-xs text-black mt-0.5 break-words">{enquiry.current_location}</div>
+                                            <div className="text-sm font-medium text-indigo-600 hover:text-indigo-800 wrap-break-word">{enquiry.name}</div>
+                                            <div className="text-xs text-black mt-0.5 wrap-break-word">{enquiry.current_location}</div>
                                             {enquiry.consent && (
                                                 <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-green-100 text-green-800 mt-1">
                                                     Consent
@@ -278,23 +278,23 @@ export default function Contact() {
                                             )}
                                         </td>
                                         <td className="px-3 py-4">
-                                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-black break-words whitespace-normal">
+                                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-black wrap-break-word whitespace-normal">
                                                 {enquiry.candidateStatus}
                                             </span>
                                             <div className="text-xs text-slate-400 mt-1.5 break-all">Ref: {enquiry.referral}</div>
                                         </td>
                                         <td className="px-3 py-4">
                                             <div className="text-xs text-slate-900 flex items-start gap-1.5 break-all">
-                                                <svg className="w-3 h-3 text-black mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+                                                <svg className="w-3 h-3 text-black mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
                                                 <span>{enquiry.email}</span>
                                             </div>
                                             <div className="text-xs text-black mt-1 flex items-center gap-1.5">
-                                                <svg className="w-3 h-3 text-black flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
+                                                <svg className="w-3 h-3 text-black shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
                                                 {enquiry.phone}
                                             </div>
                                         </td>
                                         <td className="px-3 py-4">
-                                            <div className="text-xs font-medium text-black break-words">
+                                            <div className="text-xs font-medium text-black wrap-break-word">
                                                 {getPackageName(enquiry.packageId)}
                                             </div>
                                             <div className="text-xs text-black mt-1 line-clamp-2" title={getSubjectNames(enquiry.subjectIds)}>
@@ -302,13 +302,13 @@ export default function Contact() {
                                             </div>
                                         </td>
                                         <td className="px-3 py-4">
-                                            <div className="text-xs text-black break-words">{enquiry.trainingMode}</div>
+                                            <div className="text-xs text-black wrap-break-word">{enquiry.trainingMode}</div>
                                             <div className="text-xs text-black">{enquiry.trainingTime}</div>
                                             <div className="text-xs text-black mt-0.5">Start: {enquiry.startTime}</div>
                                         </td>
                                         <td className="px-3 py-4">
-                                            <div className="text-xs text-slate-900 break-words">{enquiry.profession}</div>
-                                            <div className="text-xs text-black break-words">{enquiry.qualification}</div>
+                                            <div className="text-xs text-slate-900 wrap-break-word">{enquiry.profession}</div>
+                                            <div className="text-xs text-black wrap-break-word">{enquiry.qualification}</div>
                                             <div className="text-xs text-slate-400 mt-0.5">{enquiry.experience}</div>
                                         </td>
                                         <td className="px-3 py-4">
