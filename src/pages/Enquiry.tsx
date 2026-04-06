@@ -140,10 +140,15 @@ export default function Enquiry() {
         const fetchData = async () => {
             try {
                 const [pkgData, subData] = await Promise.all([
-                    apiRequest<Package[]>('/api/packages', { method: 'GET' }),
+                    apiRequest<any[]>('/api/packages', { method: 'GET' }),
                     apiRequest<Subject[]>('/api/subjects', { method: 'GET' })
                 ]);
-                setPackages(pkgData);
+                // Normalize package subjects to support APIs returning `subjects` or `Subjects`
+                const normalizedPkgs: Package[] = pkgData.map((p: any) => ({
+                    ...p,
+                    Subjects: p.Subjects || p.subjects || []
+                }));
+                setPackages(normalizedPkgs);
                 setSubjects(subData);
             } catch (err) {
                 setError('Failed to load initial data. Please try again.');
@@ -169,11 +174,16 @@ export default function Enquiry() {
 
         try {
             // Fetch specific package details to get included subjects
-            const detailedPkg = await apiRequest<Package>(`/api/packages/${pkgId}`, { method: 'GET' });
+            const detailedPkg = await apiRequest<any>(`/api/packages/${pkgId}`, { method: 'GET' });
 
-            if (detailedPkg.Subjects) {
-                const includedSubjectIds = detailedPkg.Subjects.map(s => s.id);
+            // Support either `Subjects` or `subjects` from backend
+            const subjectsList = detailedPkg?.Subjects || detailedPkg?.subjects || [];
+            if (subjectsList && subjectsList.length > 0) {
+                const includedSubjectIds = subjectsList.map((s: any) => s.id);
                 setFormData(prev => ({ ...prev, subjectIds: includedSubjectIds }));
+            } else {
+                // If no subjects returned, clear selection
+                setFormData(prev => ({ ...prev, subjectIds: [] }));
             }
         } catch (err) {
             console.error('Error fetching package details:', err);

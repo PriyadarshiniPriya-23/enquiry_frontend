@@ -653,18 +653,7 @@ export default function Batches() {
                                     />
                                 </div>
 
-                                <div>
-                                    <label className="block text-sm font-medium text-slate-700 mb-1">
-                                        Session QR Code
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={batchForm.sessionQr}
-                                        onChange={(e) => setBatchForm({ ...batchForm, sessionQr: e.target.value })}
-                                        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                                        placeholder="Paste QR code data or URL"
-                                    />
-                                </div>
+                                {/* Session QR Code input removed from UI; QR preview remains available from batch data */}
                             </div>
 
                             {/* image upload UI removed */}

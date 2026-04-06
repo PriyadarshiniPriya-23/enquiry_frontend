@@ -106,10 +106,17 @@ export default function PackageSubject() {
         setLoading(true);
         setError(null);
         try {
-            const data = await apiRequest<Package[]>('/api/packages', {
+            const data = await apiRequest<any[]>('/api/packages', {
                 method: 'GET',
             });
-            setPackages(data);
+
+            // Normalize package subjects: backend may return `subjects` or `Subjects`
+            const normalized = data.map(p => ({
+                ...p,
+                Subjects: p.Subjects || p.subjects || []
+            }));
+
+            setPackages(normalized as Package[]);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to fetch packages');
             console.error('Error fetching packages:', err);
